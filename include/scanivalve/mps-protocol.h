@@ -454,7 +454,7 @@ typedef enum MpsBinaryPacketSize
 
 typedef struct Mps16RawPacket
 {
-    int32_t type = MPS_PKT_16_RAW_TYPE;
+    int32_t type;
     uint32_t frame;
     uint32_t frame_time_s;
     uint32_t frame_time_ns;
@@ -465,7 +465,7 @@ typedef struct Mps16RawPacket
 
 typedef struct Mps32RawPacket
 {
-    int32_t type = MPS_PKT_32_RAW_TYPE;
+    int32_t type;
     uint32_t frame;
     uint32_t frame_time_s;
     uint32_t frame_time_ns;
@@ -476,7 +476,7 @@ typedef struct Mps32RawPacket
 
 typedef struct Mps64RawPacket
 {
-    int32_t type = MPS_PKT_64_RAW_TYPE;
+    int32_t type;
     uint32_t frame;
     uint32_t frame_time_s;
     uint32_t frame_time_ns;
@@ -486,7 +486,7 @@ typedef struct Mps64RawPacket
 
 typedef struct Mps16Packet
 {
-    int32_t type = MPS_PKT_16_TYPE;
+    int32_t type;
     uint32_t frame;
     uint32_t frame_time_s;
     uint32_t frame_time_ns;
@@ -497,7 +497,7 @@ typedef struct Mps16Packet
 
 typedef struct Mps32Packet
 {
-    int32_t type = MPS_PKT_32_TYPE;
+    int32_t type;
     uint32_t frame;
     uint32_t frame_time_s;
     uint32_t frame_time_ns;
@@ -508,7 +508,7 @@ typedef struct Mps32Packet
 
 typedef struct Mps64Packet
 {
-    int32_t type = MPS_PKT_64_TYPE;
+    int32_t type;
     uint32_t frame;
     uint32_t frame_time_s;
     uint32_t frame_time_ns;
@@ -518,7 +518,7 @@ typedef struct Mps64Packet
 
 typedef struct MpsLegacyPacket
 {
-    int32_t type = MPS_PKT_LEGACY_TYPE;
+    int32_t type;
     int32_t size;          /* 348 bytes for this packet type */
     int32_t frame;         /* frame number */
     int32_t serial_number; /* module serial number (SN) */
