@@ -426,6 +426,26 @@ typedef enum MpsSimFlags
     MPS_SIM_SIMULATED_64CH = 0x40
 } MpsSimFlags;
 
+typedef enum MpsValveStatus
+{
+    MPS_VALVE_STATUS_PX = 0,
+    MPS_VALVE_STATUS_CAL = 1,
+    MPS_VALVE_STATUS_COUNT
+} MpsValveStatus;
+
+static const char* kMpsValveStatusString[MPS_VALVE_STATUS_COUNT] = {
+    "Px", "Cal"
+};
+
+static inline const char* mps_valve_status_to_string(MpsValveStatus status)
+{
+    if (status < 0 || status >= MPS_VALVE_STATUS_COUNT)
+        return (const char*)0;
+
+    return kMpsValveStatusString[(int)status];
+}
+
+
 /******************************************************************************
 *  Data Packet Types
 ******************************************************************************/
