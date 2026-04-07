@@ -426,6 +426,26 @@ typedef enum MpsSimFlags
     MPS_SIM_SIMULATED_64CH = 0x40
 } MpsSimFlags;
 
+typedef enum MpsValveStatus
+{
+    MPS_VALVE_STATUS_PX = 0,
+    MPS_VALVE_STATUS_CAL = 1,
+    MPS_VALVE_STATUS_COUNT
+} MpsValveStatus;
+
+static const char* kMpsValveStatusString[MPS_VALVE_STATUS_COUNT] = {
+    "Px", "Cal"
+};
+
+static inline const char* mps_valve_status_to_string(MpsValveStatus status)
+{
+    if (status < 0 || status >= MPS_VALVE_STATUS_COUNT)
+        return (const char*)0;
+
+    return kMpsValveStatusString[(int)status];
+}
+
+
 /******************************************************************************
 *  Data Packet Types
 ******************************************************************************/
@@ -454,7 +474,7 @@ typedef enum MpsBinaryPacketSize
 
 typedef struct Mps16RawPacket
 {
-    int32_t type = MPS_PKT_16_RAW_TYPE;
+    int32_t type;
     uint32_t frame;
     uint32_t frame_time_s;
     uint32_t frame_time_ns;
@@ -465,7 +485,7 @@ typedef struct Mps16RawPacket
 
 typedef struct Mps32RawPacket
 {
-    int32_t type = MPS_PKT_32_RAW_TYPE;
+    int32_t type;
     uint32_t frame;
     uint32_t frame_time_s;
     uint32_t frame_time_ns;
@@ -476,7 +496,7 @@ typedef struct Mps32RawPacket
 
 typedef struct Mps64RawPacket
 {
-    int32_t type = MPS_PKT_64_RAW_TYPE;
+    int32_t type;
     uint32_t frame;
     uint32_t frame_time_s;
     uint32_t frame_time_ns;
@@ -486,7 +506,7 @@ typedef struct Mps64RawPacket
 
 typedef struct Mps16Packet
 {
-    int32_t type = MPS_PKT_16_TYPE;
+    int32_t type;
     uint32_t frame;
     uint32_t frame_time_s;
     uint32_t frame_time_ns;
@@ -497,7 +517,7 @@ typedef struct Mps16Packet
 
 typedef struct Mps32Packet
 {
-    int32_t type = MPS_PKT_32_TYPE;
+    int32_t type;
     uint32_t frame;
     uint32_t frame_time_s;
     uint32_t frame_time_ns;
@@ -508,7 +528,7 @@ typedef struct Mps32Packet
 
 typedef struct Mps64Packet
 {
-    int32_t type = MPS_PKT_64_TYPE;
+    int32_t type;
     uint32_t frame;
     uint32_t frame_time_s;
     uint32_t frame_time_ns;
@@ -518,7 +538,7 @@ typedef struct Mps64Packet
 
 typedef struct MpsLegacyPacket
 {
-    int32_t type = MPS_PKT_LEGACY_TYPE;
+    int32_t type;
     int32_t size;          /* 348 bytes for this packet type */
     int32_t frame;         /* frame number */
     int32_t serial_number; /* module serial number (SN) */
