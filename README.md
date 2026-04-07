@@ -257,14 +257,19 @@ int main(int argc, char** argv)
 ## Version Compatibility
 
 | LIB VERSION (git tag) | FIRMWARE VERSION | NOTABLE CHANGES                             |
-| --------------------- | ---------------- | ---------------                             |
+| --------------------- | ---------------- | ------------------------------------------- |
 | v0.1.0                | v4.01            | ---                                         |
 | v0.1.1                | v4.01            | firmware version macro name                 |
+| v0.1.2                | v4.01            | MPS_PKT_UNDEFINED added                     |
 
 
 ## Changelog
 
 ### LIBRARY
+
+#### v0.1.2
+- added `MpsPacketType`  `MPS_PKT_UNDEFINED = 0`
+- added helpers to get packet size from type, or labview packet size from pressure channel count
 
 #### v0.1.1
 - updated macro `MPS_VERSION_STRING` in `scanivalve/mps-protocol` to `MPS_FIRMWARE_VERSION_STRING`
