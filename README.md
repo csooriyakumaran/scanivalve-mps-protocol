@@ -16,6 +16,7 @@ To keep up to date with development on the MPS protocol, include the directory a
 ```bash
 # add as git submodule
 git submodule add https://github.com/csooriyakumaran/scanivalve-mps-protocol external/scanivalve-mps-protocol
+git submodule update --init --recursive
 
 # [Optiona] checkout specific tag (matching scanivalve firmware)
 cd external/scanivalve-mps-protocol
@@ -35,7 +36,17 @@ git commit -m "Add submodule at specific tag <tag_name>"
 ### CMake
 
 ```cmake 
-add_subdirectory(external/scanivalve-mps-protocol)
+include(FetchContent)
+
+FetchContent_Declare(
+    scanivalve-mps-protocol
+    GIT_REPOSITORY https://github.com/csooriyakumaran/scanivalve-mps-protocol.git
+    GIT_TAG <TAG/HASH>
+)
+FetchContent_MakeAvailable(scanivalve-mps-protocol)
+
+# ... #
+
 target_link_libraries(your_app PRIVATE scanivalve-mps-protocol)
 ```
 
