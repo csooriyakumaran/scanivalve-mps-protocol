@@ -452,6 +452,7 @@ static inline const char* mps_valve_status_to_string(MpsValveStatus status)
 
 typedef enum MpsBinaryPacketType
 {
+    MPS_PKT_UNDEFINED = 0,
     MPS_PKT_16_TYPE = 0x5D,
     MPS_PKT_32_TYPE = 0x65,
     MPS_PKT_64_TYPE = 0x6D,
@@ -471,6 +472,29 @@ typedef enum MpsBinaryPacketSize
     MPS_PKT_32_LABVIEW_SIZE = 136,
     MPS_PKT_64_LABVIEW_SIZE = 264,
 } MpsBinaryPacketSize;
+
+static inline uint16_t mps_packet_size_from_type(MpsBinaryPacketType t)
+{
+    switch (t)
+    {
+        case MPS_PKT_16_TYPE: case MPS_PKT_16_RAW_TYPE: return MPS_PKT_16_SIZE;
+        case MPS_PKT_32_TYPE: case MPS_PKT_32_RAW_TYPE: return MPS_PKT_32_SIZE;
+        case MPS_PKT_64_TYPE: case MPS_PKT_64_RAW_TYPE: return MPS_PKT_64_SIZE;
+        case MPS_PKT_LEGACY_TYPE: return MPS_PKT_LEGACY_SIZE;
+        case MPS_PKT_UNDEFINED: return 0;
+    }
+}
+
+static inline uint16_t mps_labview_packet_size(uint32_t ch)
+{
+    switch (ch)
+    {
+        case 16: return MPS_PKT_16_LABVIEW_SIZE;
+        case 32: return MPS_PKT_32_LABVIEW_SIZE;
+        case 64: return MPS_PKT_64_LABVIEW_SIZE;
+        default: return 0;
+    }
+}
 
 typedef struct Mps16RawPacket
 {
