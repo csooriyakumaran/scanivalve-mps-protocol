@@ -4,7 +4,7 @@ Core data structures, enumerations, and helper routines for working with [Scaniv
 
 All multi-byte fields are defined according to the [Scanivavle Hardware, Software, and User Manual](https://scanivalve.com/wp-content/uploads/2026/03/MPS4200_v401_260304.pdf)
 
-Consumers of this library are responsible for handling the byte-ordering of packets that are streamed from devices, or read from or written to files.
+Consumers of this library are responsible for handling the byte-ordering of packets that are streamed from devices, or read from / written to files.
 
 ## Including the Interface in a Project
 
@@ -32,7 +32,7 @@ git fetch --tags
 
 git checkout <tag_name>
 #e.g. for firmware version v4.01 check version compatibility table below
-git checkout v0.1.0
+git checkout v0.1.1
 
 # stage and commit the changes in the parent repository
 cd <project-root>
@@ -49,7 +49,7 @@ include(FetchContent)
 FetchContent_Declare(
     scanivalve-mps-protocol
     GIT_REPOSITORY https://github.com/csooriyakumaran/scanivalve-mps-protocol.git
-    GIT_TAG v0.1.0
+    GIT_TAG v0.1.1
 )
 FetchContent_MakeAvailable(scanivalve-mps-protocol)
 
@@ -256,21 +256,22 @@ int main(int argc, char** argv)
 
 ## Version Compatibility
 
-| LIB VERSION | FIRMWARE VERSION | NOTABLE CHANGES                             |
-| ----------- | ---------------- | ---------------                             |
-| v0.1.0      | v4.01            | ---                                         |
-| v0.1.1      | v4.01            | firmware version macro name                 |
+| LIB VERSION (git tag) | FIRMWARE VERSION | NOTABLE CHANGES                             |
+| --------------------- | ---------------- | ---------------                             |
+| v0.1.0                | v4.01            | ---                                         |
+| v0.1.1                | v4.01            | firmware version macro name                 |
 
 
 ## Changelog
 
-### LIBARARY
+### LIBRARY
+
+#### v0.1.1
+- updated macro `MPS_VERSION_STRING` in `scanivalve/mps-protocol` to `MPS_FIRMWARE_VERSION_STRING`
 
 #### v0.1.0
 - Initial Release
 
-#### v0.1.1
-- updated macro `MPS_VERSION_STRING` in `scanivalve/mps-protocol` to `MPS_FIRMWARE_VERSION_STRING`
 
 ### FIRMWARE
 
