@@ -6,7 +6,14 @@ All multibyte fields are defined according to the [Scanivavle Hardware, Software
 
 ## Including the Interface in a Project
 
-The interface is a single-header file which can simply be copied to a directory in your projects include path.
+The interface is a single-header file which can simply be copied to a directory in your project's include path.
+
+The header tracks the on-device firmware version via `MPS_FIRMWARE_VERSION_MAJOR` / `MPS_FIRMWARE_VERSION_MINOR` in `scanivalve/mps-protocol.h` (for example, firmware v4.01). Separately, the header-only library itself is versioned using semantic versioning. When using CMake, this appears as:
+
+- `MPS_PROTOCOL_VERSION_MAJOR`, `MPS_PROTOCOL_VERSION_MINOR`, `MPS_PROTOCOL_VERSION_PATCH`
+- `MPS_PROTOCOL_VERSION_STRING` (e.g. "0.1.0") via the generated `scanivalve/mps-protocol-version.h` header
+
+Consumers that do not use CMake can rely on git tags for the library version and on the firmware version macros in `mps-protocol.h`.
 
 
 ### As a git submodule
@@ -23,8 +30,8 @@ cd external/scanivalve-mps-protocol
 git fetch --tags
 
 git checkout <tag_name>
-#e.g. for firmware version v4.01
-git checkout v4.01
+#e.g. for firmware version v4.01 check version compatibility table
+git checkout v0.1.0
 
 # stage and commit the changes in the parent repository
 cd <project-root>
@@ -246,11 +253,23 @@ int main(int argc, char** argv)
 
 (*) ZERO PADDED FOR MPS-4216 & MPS-4232
 
+## Version Compatibility
+
+| LIB VERSION | FIRMWARE VERSION |
+| ----------- | ---------------- |
+| v0.1.0      | v4.01            |
+
 
 ## Changelog
 
-### v4.01
+### LIBARARY
 
+#### v0.1.0
+- Initial Release
+
+### FIRMWARE
+
+#### v4.01
 - SET SVRSEL removed: data destination (TCP Binary, UDP, FTP), and FORMAT determined through other means
 - SET OPTIONS deprecated: not used by MPS4200, kept in v4.01 for backwards compatibility with MP4264Gen1
 - FORMAT S (Statistical Binary Format) removed
