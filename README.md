@@ -2,7 +2,7 @@
 
 Core data structures, enumerations, and helper routines for working with [Scanivalve MPS-42xx](https://scanivalve.com/products/pressure-measurement/miniature-ethernet-pressure-scanners/mps4200/) pressure scanners. This single-header c-library is intended to be shared by both client and [emulator](https://github.com/csooriyakumaran/mps-emulator.git) applications (e.g., for simulating a virtual scanner to aid in development of the client applications), that need to construct, send, receive, and interpret MPS data packets. 
 
-All multi-byte fields are defined according to the [Scanivavle Hardware, Software, and User Manual](https://scanivalve.com/wp-content/uploads/2026/03/MPS4200_v401_260304.pdf)
+All multi-byte fields are defined according to the [Scanivalve Hardware, Software, and User Manual](https://scanivalve.com/wp-content/uploads/2026/03/MPS4200_v401_260304.pdf)
 
 Consumers of this library are responsible for handling the byte-ordering of packets that are streamed from devices, or read from / written to files.
 
