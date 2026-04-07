@@ -30,13 +30,3 @@ target_include_directories(scanivalve-mps-protocol
         $<INSTALL_INTERFACE:include>
 )
 
-# Expose version information as interface compile definitions so that
-# downstream consumers that do not include the generated version header can
-# still query the version via preprocessor macros if desired.
-target_compile_definitions(scanivalve-mps-protocol
-    INTERFACE
-        MPS_PROTOCOL_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
-        MPS_PROTOCOL_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-        MPS_PROTOCOL_VERSION_PATCH=${PROJECT_VERSION_PATCH}
-        MPS_PROTOCOL_VERSION_STRING=${PROJECT_VERSION_STRING}
-)

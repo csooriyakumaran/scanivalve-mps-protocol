@@ -1,8 +1,10 @@
 # SCANIVALVE MPS PROTOCOL
 
-Core data structure, enumerations, and helper routines for working with Scanivalve MPS-42xx pressure scanners. This single-header c-library is intended to be shared by both client and emulator applications (for simulating a virtual scanner to aid in development of the client applications), that need to construct, send, receive, and interpret MPS data packets. 
+Core data structures, enumerations, and helper routines for working with [Scanivalve MPS-42xx](https://scanivalve.com/products/pressure-measurement/miniature-ethernet-pressure-scanners/mps4200/) pressure scanners. This single-header c-library is intended to be shared by both client and [emulator](https://github.com/csooriyakumaran/mps-emulator.git) applications (e.g., for simulating a virtual scanner to aid in development of the client applications), that need to construct, send, receive, and interpret MPS data packets. 
 
-All multibyte fields are defined according to the [Scanivavle Hardware, Software, and User Manual](https://scanivalve.com/wp-content/uploads/2026/03/MPS4200_v401_260304.pdf)
+All multi-byte fields are defined according to the [Scanivavle Hardware, Software, and User Manual](https://scanivalve.com/wp-content/uploads/2026/03/MPS4200_v401_260304.pdf)
+
+Consumers of this library are responsible for handling the byte-ordering of packets that are streamed from devices, or read from or written to files.
 
 ## Including the Interface in a Project
 
@@ -11,10 +13,9 @@ The interface is a single-header file which can simply be copied to a directory 
 The header tracks the on-device firmware version via `MPS_FIRMWARE_VERSION_MAJOR` / `MPS_FIRMWARE_VERSION_MINOR` in `scanivalve/mps-protocol.h` (for example, firmware v4.01). Separately, the header-only library itself is versioned using semantic versioning. When using CMake, this appears as:
 
 - `MPS_PROTOCOL_VERSION_MAJOR`, `MPS_PROTOCOL_VERSION_MINOR`, `MPS_PROTOCOL_VERSION_PATCH`
-- `MPS_PROTOCOL_VERSION_STRING` (e.g. "0.1.0") via the generated `scanivalve/mps-protocol-version.h` header
+- `MPS_PROTOCOL_VERSION_STRING` (e.g. "0.1.0") via the generated `scanivalve/mps-protocol-version.h` header. 
 
 Consumers that do not use CMake can rely on git tags for the library version and on the firmware version macros in `mps-protocol.h`.
-
 
 ### As a git submodule
 
@@ -25,12 +26,12 @@ To keep up to date with development on the MPS protocol, include the directory a
 git submodule add https://github.com/csooriyakumaran/scanivalve-mps-protocol external/scanivalve-mps-protocol
 git submodule update --init --recursive
 
-# [Optiona] checkout specific tag (matching scanivalve firmware)
+# [Optiona] checkout specific tag
 cd external/scanivalve-mps-protocol
 git fetch --tags
 
 git checkout <tag_name>
-#e.g. for firmware version v4.01 check version compatibility table
+#e.g. for firmware version v4.01 check version compatibility table below
 git checkout v0.1.0
 
 # stage and commit the changes in the parent repository
@@ -48,7 +49,7 @@ include(FetchContent)
 FetchContent_Declare(
     scanivalve-mps-protocol
     GIT_REPOSITORY https://github.com/csooriyakumaran/scanivalve-mps-protocol.git
-    GIT_TAG <TAG/HASH>
+    GIT_TAG v0.1.0
 )
 FetchContent_MakeAvailable(scanivalve-mps-protocol)
 
@@ -255,9 +256,9 @@ int main(int argc, char** argv)
 
 ## Version Compatibility
 
-| LIB VERSION | FIRMWARE VERSION |
-| ----------- | ---------------- |
-| v0.1.0      | v4.01            |
+| LIB VERSION | FIRMWARE VERSION | NOTABLE CHANGES                             |
+| ----------- | ---------------- | ---------------                             |
+| v0.1.0      | v4.01            | ---                                         |
 
 
 ## Changelog
