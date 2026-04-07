@@ -10,7 +10,7 @@ Consumers of this library are responsible for handling the byte-ordering of pack
 
 The interface is a single-header file which can simply be copied to a directory in your project's include path.
 
-The header tracks the on-device firmware version via `MPS_FIRMWARE_VERSION_MAJOR` / `MPS_FIRMWARE_VERSION_MINOR` in `scanivalve/mps-protocol.h` (for example, firmware v4.01). Separately, the header-only library itself is versioned using semantic versioning. When using CMake, this appears as:
+The header tracks the on-device firmware version via `MPS_FIRMWARE_VERSION_MAJOR` / `MPS_FIRMWARE_VERSION_MINOR` / `MPS_FIRMWARE_VERSION_STRING` in `scanivalve/mps-protocol.h` (for example, firmware v4.01). Separately, the header-only library itself is versioned using semantic versioning. When using CMake, this appears as:
 
 - `MPS_PROTOCOL_VERSION_MAJOR`, `MPS_PROTOCOL_VERSION_MINOR`, `MPS_PROTOCOL_VERSION_PATCH`
 - `MPS_PROTOCOL_VERSION_STRING` (e.g. "0.1.0") via the generated `scanivalve/mps-protocol-version.h` header. 
@@ -259,6 +259,7 @@ int main(int argc, char** argv)
 | LIB VERSION | FIRMWARE VERSION | NOTABLE CHANGES                             |
 | ----------- | ---------------- | ---------------                             |
 | v0.1.0      | v4.01            | ---                                         |
+| v0.1.1      | v4.01            | firmware version macro name                 |
 
 
 ## Changelog
@@ -268,10 +269,13 @@ int main(int argc, char** argv)
 #### v0.1.0
 - Initial Release
 
+#### v0.1.1
+- updated macro `MPS_VERSION_STRING` in `scanivalve/mps-protocol` to `MPS_FIRMWARE_VERSION_STRING`
+
 ### FIRMWARE
 
 #### v4.01
-- SET SVRSEL removed: data destination (TCP Binary, UDP, FTP), and FORMAT determined through other means
-- SET OPTIONS deprecated: not used by MPS4200, kept in v4.01 for backwards compatibility with MP4264Gen1
-- FORMAT S (Statistical Binary Format) removed
+- `SET SVRSEL` removed: data destination (TCP Binary, UDP, FTP), and FORMAT determined through other means
+- `SET OPTIONS` deprecated: not used by MPS4200, kept in v4.01 for backwards compatibility with MP4264Gen1
+- `FORMAT S` (Statistical Binary Format) removed
 

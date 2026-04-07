@@ -39,11 +39,11 @@ extern "C"
 #define MPS_STRINGIFY2(x) #x
 #define MPS_STRINGIFY(x) MPS_STRINGIFY2(x)
 
-#define MPS_VERSION_STRING \
+#define MPS_FIRMWARE_VERSION_STRING \
     MPS_STRINGIFY(MPS_FIRMWARE_VERSION_MAJOR) "." \
     MPS_STRINGIFY(MPS_FIRMWARE_VERSION_MINOR) 
 
-static const char* kMpsVersionString = MPS_VERSION_STRING;
+static const char* kMpsFirmwareVersionString = MPS_FIRMWARE_VERSION_STRING;
 
 
 #define MPS_MAX_PRESSURE_CH_COUNT 64
