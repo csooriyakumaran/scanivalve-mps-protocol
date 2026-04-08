@@ -13,7 +13,7 @@
 *   interpret MPS packets.
 *
 *   All multibyte fields are defined according to the device manual; on the
-*   wire they are transmitted in big-endian (network) byte order. This
+*   wire they may be transmitted in big-endian (network) byte order. This
 *   header only defines the logical layout. Callers are responsible for
 *   performing host<->network byte order conversions as needed when
 *   serializing/deserializing.
@@ -28,10 +28,11 @@
 #ifdef __cplusplus
 extern "C"
 {
-#endif
+#endif // __cplusplus
 
 #include <stdint.h>
 #include <string.h>
+#include <stddef.h>
 
 #define MPS_FIRMWARE_VERSION_MAJOR 4
 #define MPS_FIRMWARE_VERSION_MINOR 01
@@ -45,7 +46,6 @@ extern "C"
 
 static const char* kMpsFirmwareVersionString = MPS_FIRMWARE_VERSION_STRING;
 
-
 #define MPS_MAX_PRESSURE_CH_COUNT 64
 #define MPS_MAX_TEMPERATURE_CH_COUNT 8
 #define MPS_MAX_LABVIEW_ELEMENTS 66
@@ -56,8 +56,7 @@ static const char* kMpsFirmwareVersionString = MPS_FIRMWARE_VERSION_STRING;
 #define MPS_MAX_SIGNED_ADC_COUNTS ((1 << (MPS_ADC_BITS -1)) - 1)
 #define MPS_MIN_SIGNED_ADC_COUNTS (-(1 << (MPS_ADC_BITS -1)))
 
-
-/******************************************************************************
+/*
 *
 *  mps_stricpmp
 *
@@ -70,7 +69,7 @@ static const char* kMpsFirmwareVersionString = MPS_FIRMWARE_VERSION_STRING;
 *   @return result     Zero if the strings are equal (ignoring case),
 *                     non-zero otherwise.
 *
-******************************************************************************/
+*/
 static int mps_stricpmp(const char* a, const char* b)
 {
 #if defined(_WIN32) || defined(_WIN64)
@@ -80,12 +79,7 @@ static int mps_stricpmp(const char* a, const char* b)
 #endif
 }
 
-/******************************************************************************
-*
-*  Device ID
-*
-******************************************************************************/
-
+/* Device ID */
 typedef enum MpsDeviceID
 {
     MPS_4216 = 4216,
@@ -94,16 +88,14 @@ typedef enum MpsDeviceID
 } MpsDeviceID;
 
 
-/******************************************************************************
+/*
 *
 *  Units index (Appendix A)
 *
-*   This is a subset of the ScanUnits enum used in the emulator, exposed as
-*   a C-friendly enum. Values correspond to the index used in binary packets
-*   ("Units index" in the manual).
+*   This is a subset of the ScanUnits enum. Values correspond to the index used
+*   in binary packets ("Units index" in the manual).
 *
-******************************************************************************/
-
+*/
 typedef enum MpsUnits
 {
     MPS_UNITS_PSI = 0,
@@ -137,38 +129,50 @@ typedef enum MpsUnits
     MPS_UNITS_COUNT
 } MpsUnits;
 
+/*
+*
+*  Unit Conversions
+*
+*   MPS Pressure scanners converts raw ADC counts to the base units of PSI.
+*   For other Units, a conversion is made internally before transmitting the
+*   data. This table provides the conversion factor. 
+*
+*   >    PRESSURE PSI   = COUNTS x CALIBRATION
+*   >    PRESSURE UNITS = PSI    x CONVERSION-FACTOR
+*
+*/
 static const float kMpsUnitConversion[MPS_UNITS_COUNT] = {
-    1.0f,         /* PSI  */
-    0.068046f,    /* ATM  */
-    0.068947f,    /* BAR  */
-    5.17149f,     /* CMHG */
-    70.308f,      /* CMH2O */
-    0.68947f,     /* DECIBAR */
-    2.3067f,      /* FTH2O */
-    70.306f,      /* GCM2 */
-    2.0360f,      /* INHG */
-    27.680f,      /* INH2O */
-    0.070307f,    /* KNM2 */
-    703.069f,     /* KGM2 */
-    0.001f,       /* KGCM2 */
-    6.89476f,     /* KPA */
-    6.89476f,     /* KIPIN2 */
-    68.947f,      /* MPA */
-    0.70309f,     /* MBAR */
-    51.7149f,     /* MH2O */
-    0.00689476f,  /* MMHG */
-    0.689476f,    /* NM2 */
-    6894.759766f, /* NCM2 */
-    2304.00f,     /* OZIN2 */
-    16.0f,        /* OZFT2 */
-    6894.759766f, /* PA */
-    144.00f,      /* PSF */
-    51.71490f,    /* TORR */
-    1.0f,         /* USER */
-    1.0f          /* RAW  */
+    1.00000000e+00f,  /* PSI    */
+    6.80460000e-02f,  /* ATM    */
+    6.89470000e-02f,  /* BAR    */
+    5.17149000e+00f,  /* CMHG   */
+    7.03080000e+01f,  /* CMH2O  */
+    6.89470000e-01f,  /* DECIBAR*/
+    2.30670000e+00f,  /* FTH2O  */
+    7.03060000e+01f,  /* GCM2   */
+    2.03600000e+00f,  /* INHG   */
+    2.76800000e+01f,  /* INH2O  */
+    7.03070000e-02f,  /* KNM2   */
+    7.03069000e+02f,  /* KGM2   */
+    1.00000000e-03f,  /* KGCM2  */
+    6.89476000e+00f,  /* KPA    */
+    6.89476000e+00f,  /* KIPIN2 */
+    6.89470000e+01f,  /* MPA    */
+    7.03090000e-01f,  /* MBAR   */
+    5.17149000e+01f,  /* MH2O   */
+    6.89476000e-03f,  /* MMHG   */
+    6.89476000e-01f,  /* NM2    */
+    6.89475977e+03f,  /* NCM2   */
+    2.30400000e+03f,  /* OZIN2  */
+    1.60000000e+01f,  /* OZFT2  */
+    6.89475977e+03f,  /* PA     */
+    1.44000000e+02f,  /* PSF    */
+    5.17149000e+01f,  /* TORR   */
+    1.00000000e+00f,  /* USER   */
+    1.00000000e+00f   /* RAW    */
 };
 
-/******************************************************************************
+/*
 *
 *  Units: enum <-> conversion factor
 *
@@ -176,29 +180,24 @@ static const float kMpsUnitConversion[MPS_UNITS_COUNT] = {
 *
 *   @return             Conversion factor (float)
 *                      
-******************************************************************************/
+*/
 static inline float mps_units_conversion_factor(MpsUnits units)
 {
     if (units < 0 || units >= MPS_UNITS_COUNT)
         return 1.0f;
-    return kMpsUnitConversion[(int)units];
+    return kMpsUnitConversion[(size_t)units];
 }
 
-/******************************************************************************
-*
-*  Units: enum <-> string mapping (e.g. "PA", "PSI").
-*
-******************************************************************************/
-
+/* Units: enum <-> string mapping (e.g. "PA", "PSI"). */
 static const char* kMpsUnitStrings[MPS_UNITS_COUNT] = {
-"PSI",   "ATM",  "BAR",    "CMHG",  "CMH2O", "DECIBAR",
-"FTH2O", "GCM2", "INHG",   "INH2O", "KNM2",  "KGM2",
-"KGCM2", "KPA",  "KIPIN2", "MPA",   "MBAR",  "MH2O",
-"MMHG",  "NM2",  "NCM2",   "OZIN2", "OZFT2", "PA",
-"PSF",   "TORR", "USER",   "RAW"
+    "PSI",   "ATM",  "BAR",    "CMHG",  "CMH2O", "DECIBAR",
+    "FTH2O", "GCM2", "INHG",   "INH2O", "KNM2",  "KGM2",
+    "KGCM2", "KPA",  "KIPIN2", "MPA",   "MBAR",  "MH2O",
+    "MMHG",  "NM2",  "NCM2",   "OZIN2", "OZFT2", "PA",
+    "PSF",   "TORR", "USER",   "RAW"
 };
 
-/******************************************************************************
+/*
 *
 *  mps_units_to_string
 *
@@ -209,34 +208,33 @@ static const char* kMpsUnitStrings[MPS_UNITS_COUNT] = {
 *   @return token      Pointer to a null-terminated string, or NULL if the
 *                      enum value is out of range.
 *
-******************************************************************************/
+*/
 static inline const char* mps_units_to_string(MpsUnits units)
 {
     if (units < 0 || units >= MPS_UNITS_COUNT)
-        return (const char*)0;
-    return kMpsUnitStrings[(int)units];
+        return NULL;
+    return kMpsUnitStrings[(size_t)units];
 }
 
-/******************************************************************************
+/*
 *
 *  mps_units_from_string
 *
-*   Parse a units string token (e.g. "PA") into a MpsUnits enum.
+*   Parse a units string token (e.g. "PA") into a `MpsUnits` enum.
 *
 *   @param s           Null-terminated units string.
 *
-*   @param out         Pointer to MpsUnits for the parsed result.
+*   @param out         Pointer to `MpsUnits` for the parsed result.
 *
 *   @return success    Returns 1 on success, 0 if the string is not
 *                      recognized or arguments are invalid.
 *
-******************************************************************************/
+*/
 static inline int mps_units_from_string(const char* s, MpsUnits* out)
 {
-    if (!s || !out)
-        return 0;
+    if (!s || !out) return 0;
 
-    for (int i = 0; i < (int)MPS_UNITS_COUNT; ++i)
+    for (size_t i = 0; i < (size_t)MPS_UNITS_COUNT; ++i)
     {
         if (mps_stricpmp(s, kMpsUnitStrings[i]) == 0)
         {
@@ -248,15 +246,14 @@ static inline int mps_units_from_string(const char* s, MpsUnits* out)
 }
 
 
-/******************************************************************************
+/*
 *
-*  Data format (FORMAT command)
+*  Data format (`SET FORMAT` command)
 *
 *   Enumerates the supported output data formats as configured by the
 *   FORMAT command.
 *
-******************************************************************************/
-
+*/
 typedef enum MpsDataFormat
 {
     MPS_FMT_ASCII = 0,          /* A */
@@ -267,16 +264,16 @@ typedef enum MpsDataFormat
     MPS_FMT_COUNT
 } MpsDataFormat;
 
-/******************************************************************************
-*
-*  Formats: enum <-> single-char code
-*
-*   Conversion helpers for mapping MpsDataFormat to and from the single
-*   character codes used by the FORMAT command (e.g. 'A' for ASCII,
-*   'B' for Binary).
-*
-******************************************************************************/
 
+/*
+*
+*  Formats: `MpsDataFormat` <-> single-char code
+*
+*   Conversion helpers for mapping `MpsDataFormat` to and from the single
+*   character codes used by the FORMAT command (e.g. `'A'` for ASCII,
+*   `'B'` for Binary).
+*
+*/
 static const char kMpsFormatChars[MPS_FMT_COUNT] = {
     'A', /* ASCII  */
     'C', /* CSV    */
@@ -285,18 +282,18 @@ static const char kMpsFormatChars[MPS_FMT_COUNT] = {
     'L', /* LABVIEW*/
 };
 
-/******************************************************************************
+/*
 *
 *  mps_format_to_char
 *
 *   Convert a MpsDataFormat value to its single-character code.
 *
-*   @param fmt         MpsDataFormat value.
+*   @param fmt         `MpsDataFormat` value.
 *
-*   @return code       Character code for the format, or '\0' if the
+*   @return code       Character code for the format, or `'\0'` if the
 *                      value is out of range.
 *
-******************************************************************************/
+*/
 static inline char mps_format_to_char(MpsDataFormat fmt)
 {
     if (fmt < 0 || fmt >= MPS_FMT_COUNT)
@@ -304,20 +301,20 @@ static inline char mps_format_to_char(MpsDataFormat fmt)
     return kMpsFormatChars[(int)fmt];
 }
 
-/******************************************************************************
+/*
 *
 *  mps_format_from_char
 *
-*   Parse a single-character format code into a MpsDataFormat value.
+*   Parse a single-character format code into a `MpsDataFormat` value.
 *
 *   @param c           Single-character code (case-insensitive).
 *
- *  @param out_fmt     Pointer to MpsDataFormat for the parsed result.
+*   @param out_fmt     Pointer to `MpsDataFormat` for the parsed result.
 *
-*   @return success    Returns 1 on success, 0 if the character is not
+*   @return success    Returns `1` on success, `0` if the character is not
 *                      recognized or arguments are invalid.
 *
-******************************************************************************/
+*/
 static inline int mps_format_from_char(char c, MpsDataFormat* out_fmt)
 {
     if (!out_fmt) return 0;
@@ -335,14 +332,7 @@ static inline int mps_format_from_char(char c, MpsDataFormat* out_fmt)
 }
 
 
-/******************************************************************************
-*
-*  Device status (STATUS command)
-*
-*   Enumerates high-level device states reported by the STATUS command.
-*
-******************************************************************************/
-
+/* Device status (`STATUS` command) */
 typedef enum MpsStatus
 {
     MPS_STATUS_READY = 0,
@@ -354,31 +344,30 @@ typedef enum MpsStatus
     MPS_STATUS_COUNT
 } MpsStatus;
 
-/******************************************************************************
+/*
 *
-*  Status: enum <-> string
+*  Status: `MpsStatus` <-> string
 *
-*   Conversion helpers for mapping MpsStatus values to and from their
-*   string tokens (e.g. "READY", "SCAN").
+*   Conversion table for mapping `MpsStatus` values to and from their
+*   string tokens (e.g. `"READY"`, `"SCAN"`).
 *
-******************************************************************************/
-
+*/
 static const char* kMpsStatusString[MPS_STATUS_COUNT] = {
     "READY", "SCAN", "CALZ", "SAVE", "CALVAL", "PGM"
 };
 
-/******************************************************************************
+/*
 *
 *  mps_status_to_string
 *
-*   Convert a MpsStatus value to its string token.
+*   Convert an `MpsStatus` value to its string token.
 *
-*   @param status      MpsStatus value.
+*   @param status      `MpsStatus` value.
 *
-*   @return token      Pointer to a null-terminated string, or NULL if the
+*   @return token      Pointer to a null-terminated string, or `NULL` if the
 *                      value is out of range.
 *
-******************************************************************************/
+*/
 static inline const char* mps_status_to_string(MpsStatus status)
 {
     if (status < 0 || status >= MPS_STATUS_COUNT)
@@ -387,27 +376,25 @@ static inline const char* mps_status_to_string(MpsStatus status)
     return kMpsStatusString[(int)status];
 }
 
-/******************************************************************************
+/*
 *
 *  mps_status_from_string
 *
-*   Parse a status string token (e.g. "READY") into a MpsStatus value.
+*   Parse a status string token (e.g. `"READY"`) into an `MpsStatus` value.
 *
 *   @param s           Null-terminated status string.
 *
-*   @param out_status  Pointer to MpsStatus for the parsed result.
+*   @param out_status  Pointer to `MpsStatus` for the parsed result.
 *
-*   @return success    Returns 1 on success, 0 if the string is not
+*   @return success    Returns `1` on success, `0` if the string is not
 *                      recognized or arguments are invalid.
 *
-******************************************************************************/
+*/
 static inline int mps_status_from_string(const char* s, MpsStatus* out_status)
 {
-    int i;
-    if (!s || !out_status)
-        return 0;
+    if (!s || !out_status) return 0;
 
-    for (i = 0; i < (int)MPS_STATUS_COUNT; ++i)
+    for (size_t i = 0; i < (size_t)MPS_STATUS_COUNT; ++i)
     {
         if (mps_stricpmp(s, kMpsStatusString[i]) == 0)
         {
@@ -419,16 +406,20 @@ static inline int mps_status_from_string(const char* s, MpsStatus* out_status)
     return 0;
 }
 
-typedef enum MpsSimFlags
+/* `MpsSimFlags` -> enum `MpsSimFlags_` */
+typedef int MpsSimFlags;
+
+enum MpsSimFlags_
 {
-    MPS_SIM_NONE = 0x00,
+    MPS_SIM_NONE           = 0x00,
     MPS_SIM_SHOW_PTP_DIFFS = 0x04,
     MPS_SIM_SIMULATED_64CH = 0x40
-} MpsSimFlags;
+};
 
+/* `MpsValveStatus`: e.g., `Px`=`0`, `Cal`=`1`*/
 typedef enum MpsValveStatus
 {
-    MPS_VALVE_STATUS_PX = 0,
+    MPS_VALVE_STATUS_PX  = 0,
     MPS_VALVE_STATUS_CAL = 1,
     MPS_VALVE_STATUS_COUNT
 } MpsValveStatus;
@@ -437,42 +428,60 @@ static const char* kMpsValveStatusString[MPS_VALVE_STATUS_COUNT] = {
     "Px", "Cal"
 };
 
+/*
+*  mps_valve_status_to_string
+*
+*   Convert an `MpsValveStatus` value to its string token.
+*
+*   @param status      `MpsValveStatus` value.
+*
+*   @return token      Pointer to a null-terminated string, or `NULL` if the
+*                      value is out of range.
+*
+*/
 static inline const char* mps_valve_status_to_string(MpsValveStatus status)
 {
     if (status < 0 || status >= MPS_VALVE_STATUS_COUNT)
-        return (const char*)0;
+        return NULL;
 
-    return kMpsValveStatusString[(int)status];
+    return kMpsValveStatusString[(size_t)status];
 }
 
 
-/******************************************************************************
-*  Data Packet Types
-******************************************************************************/
-
+/* Binary Packet Types: defined in Section 7 of the Manual*/
 typedef enum MpsBinaryPacketType
 {
-    MPS_PKT_UNDEFINED = 0,
-    MPS_PKT_16_TYPE = 0x5D,
-    MPS_PKT_32_TYPE = 0x65,
-    MPS_PKT_64_TYPE = 0x6D,
+    MPS_PKT_UNDEFINED   = 0,
+    MPS_PKT_16_TYPE     = 0x5D,
+    MPS_PKT_32_TYPE     = 0x65,
+    MPS_PKT_64_TYPE     = 0x6D,
     MPS_PKT_16_RAW_TYPE = 0x5B,
     MPS_PKT_32_RAW_TYPE = 0x63,
     MPS_PKT_64_RAW_TYPE = 0x69,
     MPS_PKT_LEGACY_TYPE = 0x0A,
 } MpsBinaryPacketType;
 
+/* Binary Packet Size: defined in Section 7 of the Manual*/
 typedef enum MpsBinaryPacketSize
 {
-    MPS_PKT_16_SIZE= 96,
-    MPS_PKT_32_SIZE= 160,
-    MPS_PKT_64_SIZE= 304,
-    MPS_PKT_LEGACY_SIZE= 348,
+    MPS_PKT_16_SIZE         = 96,
+    MPS_PKT_32_SIZE         = 160,
+    MPS_PKT_64_SIZE         = 304,
+    MPS_PKT_LEGACY_SIZE     = 348,
     MPS_PKT_16_LABVIEW_SIZE = 72,
     MPS_PKT_32_LABVIEW_SIZE = 136,
     MPS_PKT_64_LABVIEW_SIZE = 264,
 } MpsBinaryPacketSize;
 
+/*
+ *  mps_packet_size_from_type
+ *
+ *    Returns the packet size based on the `MpsBinaryPacketType`
+ *
+ *    @param t      `MpsBinaryPacketType`
+ *
+ *    @returns      a `uint16_t` packet size
+ */
 static inline uint16_t mps_packet_size_from_type(MpsBinaryPacketType t)
 {
     switch (t)
@@ -481,10 +490,16 @@ static inline uint16_t mps_packet_size_from_type(MpsBinaryPacketType t)
         case MPS_PKT_32_TYPE: case MPS_PKT_32_RAW_TYPE: return MPS_PKT_32_SIZE;
         case MPS_PKT_64_TYPE: case MPS_PKT_64_RAW_TYPE: return MPS_PKT_64_SIZE;
         case MPS_PKT_LEGACY_TYPE: return MPS_PKT_LEGACY_SIZE;
-        case MPS_PKT_UNDEFINED: default: return 0;
+        case MPS_PKT_UNDEFINED: default: return 0u;
     }
 }
 
+/*
+ *  Returns the packet size for a Labview packet based on the pressure channel count
+ *
+ *  Labview packets are send if `SET FORMAT B L`
+ *
+ */
 static inline uint16_t mps_labview_packet_size(uint32_t ch)
 {
     switch (ch)
@@ -492,10 +507,11 @@ static inline uint16_t mps_labview_packet_size(uint32_t ch)
         case 16: return MPS_PKT_16_LABVIEW_SIZE;
         case 32: return MPS_PKT_32_LABVIEW_SIZE;
         case 64: return MPS_PKT_64_LABVIEW_SIZE;
-        default: return 0;
+        default: return 0u;
     }
 }
 
+/*  MPS-4216, RAW count packet */
 typedef struct Mps16RawPacket
 {
     int32_t type;
@@ -507,6 +523,7 @@ typedef struct Mps16RawPacket
 } Mps16RawPacket;
 
 
+/*  MPS-4232, RAW count packet */
 typedef struct Mps32RawPacket
 {
     int32_t type;
@@ -518,6 +535,7 @@ typedef struct Mps32RawPacket
 } Mps32RawPacket;
 
 
+/*  MPS-4264, RAW count packet */
 typedef struct Mps64RawPacket
 {
     int32_t type;
@@ -528,6 +546,7 @@ typedef struct Mps64RawPacket
     int32_t counts[64];
 } Mps64RawPacket;
 
+/*  MPS-4216, EU units packet */
 typedef struct Mps16Packet
 {
     int32_t type;
@@ -539,6 +558,7 @@ typedef struct Mps16Packet
 } Mps16Packet;
 
 
+/*  MPS-4232, EU units packet */
 typedef struct Mps32Packet
 {
     int32_t type;
@@ -550,6 +570,7 @@ typedef struct Mps32Packet
 } Mps32Packet;
 
 
+/*  MPS-4264, EU units packet */
 typedef struct Mps64Packet
 {
     int32_t type;
@@ -560,58 +581,64 @@ typedef struct Mps64Packet
     float pressure[64];
 } Mps64Packet;
 
+/*
+ *
+ * MPS-4264 Legacy packet
+ *
+ *   Used by MPS-4264Gen1 and by MPS-4200 with `SET SIM 0x40` (with zeros
+ *   padding unused channels)
+ *
+ */
 typedef struct MpsLegacyPacket
 {
-    int32_t type;
-    int32_t size;          /* 348 bytes for this packet type */
-    int32_t frame;         /* frame number */
-    int32_t serial_number; /* module serial number (SN) */
+    int32_t type;                      /* 0x0A */
+    int32_t size;                      /* 348 bytes */
+    int32_t frame;                     /* frame number */
+    int32_t serial_number;             /* module serial number (SN) */
 
-    float framerate;       /* scanning rate in Hz */
-    int32_t valve_status;  /* 0 = Px, 1 = Cal */
-    int32_t unit_index;    /* MpsUnits index */
-    float unit_conversion; /* conversion factor from PSI to selected units */
+    float framerate;                   /* scanning rate in Hz */
+    int32_t valve_status;              /* 0 = Px, 1 = Cal */
+    int32_t unit_index;                /* MpsUnits index */
+    float unit_conversion;             /* conversion factor from PSI to selected units */
 
-    uint32_t ptp_scan_start_time_s;  /* Scan start time (SST) in seconds (epoch) */
-    uint32_t ptp_scan_start_time_ns; /* Scan start time (SST) in nanoseconds */
-
+    uint32_t ptp_scan_start_time_s;    /* Scan start time (SST) in seconds (epoch) */
+    uint32_t ptp_scan_start_time_ns;   /* Scan start time (SST) in nanoseconds */
     uint32_t external_trigger_time_us; /* External trigger time in microseconds */
 
-    float temperature[8]; /* array of 4 RTD temps, remaining padded with 0 */
+    float temperature[8];              /* array of 8 RTD temperatures */
 
-    /*
-     * Pressures: array of 64 values.
-     * The manual allows float or integer depending on units (EU vs RAW).
-     * This struct models the most common float/EU case. For RAW, interpret
-     * the same bytes as int32_t.
-     */
+    /* Pressures: array of 64 pressure or count values.
+     * The manual allows float or integer depending on units (EU vs RAW). */
     union {
-        float pressure[64];
-        int32_t counts[64];
+        float pressure[64];            /* pressures in EU units */
+        int32_t counts[64];            /* Raw ADC counts if units == RAW */
     };
 
-    uint32_t frame_time_s;  /* frame time in seconds, relative to SST */
-    uint32_t frame_time_ns; /* frame time in nanoseconds, relative to SST */
+    uint32_t frame_time_s;             /* frame time in seconds, relative to SST */
+    uint32_t frame_time_ns;            /* frame time in nanoseconds, relative to SST */
 
     uint32_t external_trigger_time_s;  /* external trigger time in seconds (rel. to SST) */
     uint32_t external_trigger_time_ns; /* external trigger time in nanoseconds (rel. to SST) */
 } MpsLegacyPacket;
 
 
+/* 16-Channel Labview packet */
 typedef struct Mps16LabviewPacket
 {
     float frame;        /* frame number */
-    float temperature;  /* average MPS temperature */
+    float temperature;  /* average temperature */
     float pressure[16]; /* 16 channels of pressure data */
 } Mps16LabviewPacket;
 
+/* 32-Channel Labview packet */
 typedef struct Mps32LabviewPacket
 {
     float frame;        /* frame number */
-    float temperature;  /* average MPS temperature */
+    float temperature;  /* average temperature */
     float pressure[32]; /* 32 channels of pressure data */
 } Mps32LabviewPacket;
 
+/* 64-Channel Labview packet */
 typedef struct Mps64LabviewPacket
 {
     float frame;        /* frame number */
@@ -633,6 +660,11 @@ static_assert(sizeof(Mps64LabviewPacket) == MPS_PKT_64_LABVIEW_SIZE, "MpsLabview
 #endif
 
 
+/*
+*  Contains type, pressure/temperature channel count, and
+*  the size of the packet in bytes
+*
+*/
 typedef struct MpsBinaryPacketInfo
 {
     uint8_t type;
@@ -641,6 +673,7 @@ typedef struct MpsBinaryPacketInfo
     uint16_t size_bytes;
 } MpsBinaryPacketInfo;
 
+/* Table of defined packet types and info */
 static const MpsBinaryPacketInfo kMpsBinaryPacketInfoTable[] = {
     {MPS_PKT_16_RAW_TYPE, 16, 4, MPS_PKT_16_SIZE},
     {MPS_PKT_32_RAW_TYPE, 32, 4, MPS_PKT_32_SIZE},
@@ -654,18 +687,24 @@ static const MpsBinaryPacketInfo kMpsBinaryPacketInfoTable[] = {
 
 #define MPS_BINARY_PACKET_INFO_COUNT (sizeof(kMpsBinaryPacketInfoTable)/sizeof(kMpsBinaryPacketInfoTable[0]))
 
+/*
+*
+*  Retreive a pointer a pre-populated `MpsBinaryPacketInfo` struct from the type
+*
+*/
 static inline const MpsBinaryPacketInfo* mps_get_binary_packet_info_by_type(uint8_t type)
 {
-    for (size_t i = 0; i < MPS_BINARY_PACKET_INFO_COUNT; ++i)
+    for (size_t i = 0; i < (size_t)MPS_BINARY_PACKET_INFO_COUNT; ++i)
     {
-        if (kMpsBinaryPacketInfoTable[i].type == type) return &kMpsBinaryPacketInfoTable[i];
+        if (kMpsBinaryPacketInfoTable[i].type == type)
+            return &kMpsBinaryPacketInfoTable[i];
     }
     return (const MpsBinaryPacketInfo*)0;
 }
 
 
 #ifdef __cplusplus
-} /* extern "C" */
-#endif
+} // extern "C"
+#endif // __cplusplus
 
-#endif /* MPS_PROTOCOL_H_ */
+#endif // MPS_PROTOCOL_H_ 

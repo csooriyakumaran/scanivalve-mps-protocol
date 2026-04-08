@@ -256,16 +256,22 @@ int main(int argc, char** argv)
 
 ## Version Compatibility
 
-| LIB VERSION (git tag) | FIRMWARE VERSION | NOTABLE CHANGES                             |
-| --------------------- | ---------------- | ------------------------------------------- |
-| v0.1.0                | v4.01            | ---                                         |
-| v0.1.1                | v4.01            | firmware version macro name                 |
-| v0.1.2                | v4.01            | MPS_PKT_UNDEFINED added                     |
+| LIB VERSION (git tag) | FIRMWARE VERSION |
+| --------------------- | ---------------- |
+| v0.1.0 - v0.1.x       | v4.01            |
 
 
 ## Changelog
 
 ### LIBRARY
+
+#### v0.1.4
+- renamed MpsSimFlags to enum MpsSimFlags_ (removed typedef)
+- added typedef for MpsSimFlags to int. This help at calling sites where multiple flags are combined
+- documentation clean up
+
+#### v0.1.3
+- fixed compiler warnings for non-returning control paths
 
 #### v0.1.2
 - added `MpsPacketType`  `MPS_PKT_UNDEFINED = 0`
