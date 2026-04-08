@@ -481,7 +481,7 @@ static inline uint16_t mps_packet_size_from_type(MpsBinaryPacketType t)
         case MPS_PKT_32_TYPE: case MPS_PKT_32_RAW_TYPE: return MPS_PKT_32_SIZE;
         case MPS_PKT_64_TYPE: case MPS_PKT_64_RAW_TYPE: return MPS_PKT_64_SIZE;
         case MPS_PKT_LEGACY_TYPE: return MPS_PKT_LEGACY_SIZE;
-        case MPS_PKT_UNDEFINED: defualt: return 0;
+        case MPS_PKT_UNDEFINED: default: return 0;
     }
 }
 
