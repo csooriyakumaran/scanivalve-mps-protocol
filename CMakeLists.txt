@@ -15,7 +15,12 @@ project(scanivalve-mps-protocol
     LANGUAGES C
 )
 
+option(MPS_BUILD_INSTALL "Enable install rules" OFF)
+
 add_library(scanivalve-mps-protocol INTERFACE)
+add_library(scanivalve::mps-protocol ALIAS scanivalve-mps-protocol)
+
+target_compile_features(aether INTERFACE c_std_11)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.h.in
@@ -30,3 +35,12 @@ target_include_directories(scanivalve-mps-protocol
         $<INSTALL_INTERFACE:include>
 )
 
+if (MPS_BUILD_INSTALL)
+    include(GNUInstallDirs)
+
+    install(DIRECTORY include/scanivalve DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/scanivalve/mps-protocol-version.h
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/scanivalve
+    )
+    install(FILES README.md LICENSE VERSION DESTINATION .)
+endif()
