@@ -43,8 +43,6 @@ extern "C"
     MPS_STRINGIFY(MPS_FIRMWARE_VERSION_MAJOR) "." \
     MPS_STRINGIFY(MPS_FIRMWARE_VERSION_MINOR) 
 
-static const char* kMpsFirmwareVersionString = MPS_FIRMWARE_VERSION_STRING;
-
 #define MPS_MAX_PRESSURE_CH_COUNT 64
 #define MPS_MAX_TEMPERATURE_CH_COUNT 8
 #define MPS_MAX_LABVIEW_ELEMENTS 66
@@ -69,7 +67,7 @@ static const char* kMpsFirmwareVersionString = MPS_FIRMWARE_VERSION_STRING;
 *                     non-zero otherwise.
 *
 */
-static int mps_stricpmp(const char* a, const char* b)
+static inline int mps_stricmp(const char* a, const char* b)
 {
 #if defined(_WIN32) || defined(_WIN64)
     return _stricmp(a, b);   /* Windows */
@@ -265,7 +263,7 @@ static inline int mps_units_from_string(const char* s, MpsUnits* out)
 
     for (size_t i = 0; i < (size_t)MPS_UNITS_COUNT; ++i)
     {
-        if (mps_stricpmp(s, kMpsUnitStrings[i]) == 0)
+        if (mps_stricmp(s, kMpsUnitStrings[i]) == 0)
         {
             *out = (MpsUnits)i;
             return 1;
@@ -425,7 +423,7 @@ static inline int mps_status_from_string(const char* s, MpsStatus* out_status)
 
     for (size_t i = 0; i < (size_t)MPS_STATUS_COUNT; ++i)
     {
-        if (mps_stricpmp(s, kMpsStatusString[i]) == 0)
+        if (mps_stricmp(s, kMpsStatusString[i]) == 0)
         {
             *out_status = (MpsStatus)i;
             return 1;
