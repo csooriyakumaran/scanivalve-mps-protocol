@@ -265,24 +265,7 @@ int main(int argc, char** argv)
 
 ### LIBRARY
 
-#### v0.1.4
-- renamed MpsSimFlags to enum MpsSimFlags_ (removed typedef)
-- added typedef for MpsSimFlags to int. This help at calling sites where multiple flags are combined
-- documentation clean up
-
-#### v0.1.3
-- fixed compiler warnings for non-returning control paths
-
-#### v0.1.2
-- added `MpsPacketType`  `MPS_PKT_UNDEFINED = 0`
-- added helpers to get packet size from type, or labview packet size from pressure channel count
-
-#### v0.1.1
-- updated macro `MPS_VERSION_STRING` in `scanivalve/mps-protocol` to `MPS_FIRMWARE_VERSION_STRING`
-
-#### v0.1.0
-- Initial Release
-
+See [CHANGELOG.md](CHANGELOG.md)
 
 ### FIRMWARE
 
