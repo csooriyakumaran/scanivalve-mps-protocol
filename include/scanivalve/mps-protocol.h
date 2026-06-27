@@ -1,6 +1,3 @@
-#ifndef MPS_PROTOCOL_H_
-#define MPS_PROTOCOL_H_
-
 /******************************************************************************
 *
 *  mps-protocol.h
@@ -24,6 +21,8 @@
 *                   and User Manual. Software Version 4.01 (Feb 2026)
 *
 ******************************************************************************/
+#ifndef MPS_PROTOCOL_H_
+#define MPS_PROTOCOL_H_
 
 #ifdef __cplusplus
 extern "C"
@@ -92,8 +91,8 @@ typedef enum MpsDeviceID
 *
 *  Units index (Appendix A)
 *
-*   This is a subset of the ScanUnits enum. Values correspond to the index used
-*   in binary packets ("Units index" in the manual).
+*   Values correspond to the index used in binary packets
+*   ("Units index" in the manual).
 *
 */
 typedef enum MpsUnits
@@ -108,19 +107,19 @@ typedef enum MpsUnits
     MPS_UNITS_GCM2,
     MPS_UNITS_INHG,
     MPS_UNITS_INH2O,
-    MPS_UNITS_KNM2,
-    MPS_UNITS_KGM2,
     MPS_UNITS_KGCM2,
-    MPS_UNITS_KPA,
+    MPS_UNITS_KGM2,
     MPS_UNITS_KIPIN2,
-    MPS_UNITS_MPA,
+    MPS_UNITS_KNM2,
+    MPS_UNITS_KPA,
     MPS_UNITS_MBAR,
     MPS_UNITS_MH2O,
     MPS_UNITS_MMHG,
-    MPS_UNITS_NM2,
+    MPS_UNITS_MPA,
     MPS_UNITS_NCM2,
-    MPS_UNITS_OZIN2,
+    MPS_UNITS_NM2,
     MPS_UNITS_OZFT2,
+    MPS_UNITS_OZIN2,
     MPS_UNITS_PA,
     MPS_UNITS_PSF,
     MPS_UNITS_TORR,
@@ -135,41 +134,48 @@ typedef enum MpsUnits
 *
 *   MPS Pressure scanners converts raw ADC counts to the base units of PSI.
 *   For other Units, a conversion is made internally before transmitting the
-*   data. This table provides the conversion factor. 
+*   data. This table provides the conversion factor.
 *
 *   >    PRESSURE PSI   = COUNTS x CALIBRATION
 *   >    PRESSURE UNITS = PSI    x CONVERSION-FACTOR
 *
+*   Values are transcribed verbatim from Appendix A of the manual (firmware
+*   v4.01). Do not "correct" them for physical precision; matching the manual
+*   preserves fidelity with the device's own internal conversions.
+*
+*   Note: a few manual entries are not internally consistent (e.g. MH2O is
+*   not exactly CMH2O/100). This is a quirk of the manual, not a typo.
+*
 */
 static const float kMpsUnitConversion[MPS_UNITS_COUNT] = {
-    1.00000000e+00f,  /* PSI    */
-    6.80460000e-02f,  /* ATM    */
-    6.89470000e-02f,  /* BAR    */
-    5.17149000e+00f,  /* CMHG   */
-    7.03080000e+01f,  /* CMH2O  */
-    6.89470000e-01f,  /* DECIBAR*/
-    2.30670000e+00f,  /* FTH2O  */
-    7.03060000e+01f,  /* GCM2   */
-    2.03600000e+00f,  /* INHG   */
-    2.76800000e+01f,  /* INH2O  */
-    7.03070000e-02f,  /* KNM2   */
-    7.03069000e+02f,  /* KGM2   */
-    1.00000000e-03f,  /* KGCM2  */
-    6.89476000e+00f,  /* KPA    */
-    6.89476000e+00f,  /* KIPIN2 */
-    6.89470000e+01f,  /* MPA    */
-    7.03090000e-01f,  /* MBAR   */
-    5.17149000e+01f,  /* MH2O   */
-    6.89476000e-03f,  /* MMHG   */
-    6.89476000e-01f,  /* NM2    */
-    6.89475977e+03f,  /* NCM2   */
-    2.30400000e+03f,  /* OZIN2  */
-    1.60000000e+01f,  /* OZFT2  */
-    6.89475977e+03f,  /* PA     */
-    1.44000000e+02f,  /* PSF    */
-    5.17149000e+01f,  /* TORR   */
-    1.00000000e+00f,  /* USER   */
-    1.00000000e+00f   /* RAW    */
+    1.00000000e+00f,  /*  0 - PSI     */
+    6.80460000e-02f,  /*  1 - ATM     */
+    6.89470000e-02f,  /*  2 - BAR     */
+    5.17149000e+00f,  /*  3 - CMHG    */
+    7.03080000e+01f,  /*  4 - CMH2O   */
+    6.89470000e-01f,  /*  5 - DECIBAR */
+    2.30670000e+00f,  /*  6 - FTH2O   */
+    7.03060000e+01f,  /*  7 - GCM2    */
+    2.03600000e+00f,  /*  8 - INHG    */
+    2.76800000e+01f,  /*  9 - INH2O   */
+    7.03070000e-02f,  /* 10 - KGCM2   */
+    7.03069000e+02f,  /* 11 - KGM2    */
+    1.00000000e-03f,  /* 12 - KIPIN2  */
+    6.89476000e+00f,  /* 13 - KNM2    */
+    6.89476000e+00f,  /* 14 - KPA     */
+    6.89470000e+01f,  /* 15 - MBAR    */
+    7.03090000e-01f,  /* 16 - MH2O    */
+    5.17149000e+01f,  /* 17 - MMHG    */
+    6.89476000e-03f,  /* 18 - MPA     */
+    6.89476000e-01f,  /* 19 - NCM2    */
+    6.89475977e+03f,  /* 20 - NM2     */
+    2.30400000e+03f,  /* 21 - OZFT2   */
+    1.60000000e+01f,  /* 22 - OZIN2   */
+    6.89475977e+03f,  /* 23 - PA      */
+    1.44000000e+02f,  /* 24 - PSF     */
+    5.17149010e+01f,  /* 25 - TORR    */
+    1.00000000e+00f,  /* 26 - USER    */
+    1.00000000e+00f   /* 27 - RAW     */
 };
 
 /*
@@ -190,11 +196,34 @@ static inline float mps_units_conversion_factor(MpsUnits units)
 
 /* Units: enum <-> string mapping (e.g. "PA", "PSI"). */
 static const char* kMpsUnitStrings[MPS_UNITS_COUNT] = {
-    "PSI",   "ATM",  "BAR",    "CMHG",  "CMH2O", "DECIBAR",
-    "FTH2O", "GCM2", "INHG",   "INH2O", "KNM2",  "KGM2",
-    "KGCM2", "KPA",  "KIPIN2", "MPA",   "MBAR",  "MH2O",
-    "MMHG",  "NM2",  "NCM2",   "OZIN2", "OZFT2", "PA",
-    "PSF",   "TORR", "USER",   "RAW"
+    "PSI",
+    "ATM",
+    "BAR",
+    "CMHG",
+    "CMH2O",
+    "DECIBAR",
+    "FTH2O",
+    "GCM2",
+    "INHG",
+    "INH2O",
+    "KGCM2",
+    "KGM2",
+    "KIPIN2",
+    "KNM2",
+    "KPA",
+    "MBAR",
+    "MH2O",
+    "MMHG",
+    "MPA",
+    "NCM2",
+    "NM2",
+    "OZFT2",
+    "OZIN2",
+    "PA",
+    "PSF",
+    "TORR",
+    "USER",
+    "RAW"
 };
 
 /*
