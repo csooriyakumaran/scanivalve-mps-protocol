@@ -10,18 +10,33 @@ that the protocol targets (currently firmware v4.01).
 
 ## [Unreleased]
 
-### Fixed
-- Corrected ordering and transcription bugs in the `MpsUnits` enum and the
-  `kMpsUnitConversion` / `kMpsUnitStrings` tables. The enum order now matches
-  the manual's binary "Units index" (Appendix A), so a `unit_index` read from a
-  packet indexes the conversion and string tables correctly.
-- Fixed the `MMHG` conversion factor (was 10x too large).
+### Added
+- `MPS_BUILD_INSTALL` CMake option (default `OFF`) with install rules that stage
+  the public header, the generated `mps-protocol-version.h`, and `README.md` /
+  `LICENSE` / `VERSION` for packaging into release archives.
+- `scanivalve::mps-protocol` namespaced `ALIAS` target.
+- Declared C11 as the consumer-facing language standard via
+  `target_compile_features`.
+- This `CHANGELOG.md`.
 
 ### Changed
 - Unit conversion factors now match Appendix A of the manual verbatim,
   including the manual's own rounding quirks, to preserve fidelity with the
   device's internal conversions. Added a provenance comment documenting this
   policy.
+- Renamed `mps_stricpmp` to `mps_stricmp` and made it `static inline` (removes
+  the unused-function warning in translation units that do not call it).
+
+### Removed
+- `kMpsFirmwareVersionString` constant. Consumers must use the
+  `MPS_FIRMWARE_VERSION_STRING` macro instead.
+
+### Fixed
+- Corrected ordering and transcription bugs in the `MpsUnits` enum and the
+  `kMpsUnitConversion` / `kMpsUnitStrings` tables. The enum order now matches
+  the manual's binary "Units index" (Appendix A), so a `unit_index` read from a
+  packet indexes the conversion and string tables correctly.
+- Fixed the `MMHG` conversion factor (was 10x too large).
 
 ## [0.1.4] - 2026-04-08
 

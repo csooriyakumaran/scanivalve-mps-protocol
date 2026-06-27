@@ -20,7 +20,7 @@ option(MPS_BUILD_INSTALL "Enable install rules" OFF)
 add_library(scanivalve-mps-protocol INTERFACE)
 add_library(scanivalve::mps-protocol ALIAS scanivalve-mps-protocol)
 
-target_compile_features(aether INTERFACE c_std_11)
+target_compile_features(scanivalve-mps-protocol INTERFACE c_std_11)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.h.in
