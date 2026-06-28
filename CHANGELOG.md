@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Note: the library version is tracked separately from the MPS firmware version
 that the protocol targets (currently firmware v4.01).
 
-## [Unreleased]
+## [0.1.5] - 2026-06-28
 
 ### Added
 - Byte-order-aware packet ingest helpers: `mps_peek` (identifies the packet
