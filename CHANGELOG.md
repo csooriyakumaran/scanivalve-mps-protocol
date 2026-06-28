@@ -11,6 +11,19 @@ that the protocol targets (currently firmware v4.01).
 ## [Unreleased]
 
 ### Added
+- Byte-order-aware packet ingest helpers: `mps_peek` (identifies the packet
+  `info`, the wire byte order, and whether a swap is needed from the leading
+  type field), `mps_host_byte_order`, `mps_byte_swap_inplace` (in-place swap for
+  mutable buffers), and `mps_copy_packet` (copy-out for read-only sources such as
+  files / shared memory). Adds the `MpsByteOrder`, `MpsStream`, and
+  `MpsParseStatus` types.
+- `MPS_STATIC_ASSERT` macro (`static_assert` in C++, `_Static_assert` in C11) so
+  the packet-size layout checks now apply in C as well as C++, plus a
+  compile-time assert that every packet type value fits in one byte (the
+  byte-order auto-detect depends on it).
+- `MPS_ALIGNOF` macro and compile-time `alignof == 4 && sizeof % 4 == 0` checks
+  on every packet struct, guarding the "all fields are 4-byte words" assumption
+  the byte-swap helpers rely on (an oversized field would now fail the build).
 - `MPS_BUILD_INSTALL` CMake option (default `OFF`) with install rules that stage
   the public header, the generated `mps-protocol-version.h`, and `README.md` /
   `LICENSE` / `VERSION` for packaging into release archives.
@@ -26,6 +39,9 @@ that the protocol targets (currently firmware v4.01).
   policy.
 - Renamed `mps_stricpmp` to `mps_stricmp` and made it `static inline` (removes
   the unused-function warning in translation units that do not call it).
+- Rewrote the README parsing example to use the new ingest helpers instead of
+  `reinterpret_cast`, and updated the byte-order note to reflect that the
+  library now detects and converts byte order.
 
 ### Removed
 - `kMpsFirmwareVersionString` constant. Consumers must use the
@@ -37,6 +53,8 @@ that the protocol targets (currently firmware v4.01).
   the manual's binary "Units index" (Appendix A), so a `unit_index` read from a
   packet indexes the conversion and string tables correctly.
 - Fixed the `MMHG` conversion factor (was 10x too large).
+- Include `<strings.h>` on POSIX so `mps_stricmp`'s `strcasecmp` is declared
+  rather than relying on an implicit declaration.
 
 ## [0.1.4] - 2026-04-08
 

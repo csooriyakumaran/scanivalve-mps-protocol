@@ -4,7 +4,7 @@ Core data structures, enumerations, and helper routines for working with [Scaniv
 
 All multi-byte fields are defined according to the [Scanivalve Hardware, Software, and User Manual](https://scanivalve.com/wp-content/uploads/2026/03/MPS4200_v401_260304.pdf)
 
-Consumers of this library are responsible for handling the byte-ordering of packets that are streamed from devices, or read from / written to files.
+Multi-byte fields are transmitted in the device's native (little-endian) order. The library detects the byte order from each packet's leading type field and provides helpers (`mps_peek`, `mps_copy_packet`, `mps_byte_swap_inplace`) to convert to host order, so consumers do not have to hand-roll byte swapping. See [PARSING DATA](#parsing-data).
 
 ## Including the Interface in a Project
 
@@ -32,7 +32,7 @@ git fetch --tags
 
 git checkout <tag_name>
 #e.g. for firmware version v4.01 check version compatibility table below
-git checkout v0.1.1
+git checkout v0.1.4
 
 # stage and commit the changes in the parent repository
 cd <project-root>
@@ -49,7 +49,7 @@ include(FetchContent)
 FetchContent_Declare(
     scanivalve-mps-protocol
     GIT_REPOSITORY https://github.com/csooriyakumaran/scanivalve-mps-protocol.git
-    GIT_TAG v0.1.1
+    GIT_TAG v0.1.4
 )
 FetchContent_MakeAvailable(scanivalve-mps-protocol)
 
@@ -60,12 +60,26 @@ target_link_libraries(your_app PRIVATE scanivalve-mps-protocol)
 
 ## PARSING DATA
 
+The packet type and the wire byte order are constant for a given stream or file,
+so call `mps_peek` **once** on the first frame to identify the packet (`info`),
+its byte order, and whether a swap is needed versus the host. Cache that in an
+`MpsStream` and reuse it for every packet.
+
+Convert each frame to host order with either:
+
+- `mps_copy_packet(dst, src, size_bytes, byte_swap)` — copies `src` into a
+  separate, correctly aligned struct (leaving `src` untouched). Use this for
+  read-only sources such as memory-mapped files or shared memory; with
+  `byte_swap == 0` it is a plain `memcpy`. This is also the cleanest option
+  generally, since the field reads afterward are well-defined.
+- `mps_byte_swap_inplace(buf, size_bytes)` — swaps in place for buffers you own
+  and may mutate (e.g. a socket receive buffer). Call it exactly once per frame.
+
 ### from a binary file
 
 ```c++
 #include <cstdint>
 #include <cstdio>
-#include <cstring>
 
 #include "scanivalve/mps-protocol.h"
 
@@ -77,129 +91,77 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    const char* filename = argv[1];
-    FILE* fp = std::fopen(filename, "rb");
-    if (!fp)
-    {
-        std::perror("fopen");
-        return 1;
-    }
+    FILE* fp = std::fopen(argv[1], "rb");
+    if (!fp) { std::perror("fopen"); return 1; }
 
     std::uint8_t buf[MPS_MAX_BINARY_PACKET_SIZE];
+    MpsStream    stream{};   // populated on the first packet, reused thereafter
 
     for (;;)
     {
-        // Read the first 4 bytes for the type field (already little-endian)
-        std::uint32_t type_le;
-        std::size_t n = std::fread(&type_le, 1, sizeof(type_le), fp);
-        if (n == 0)
-            break; // EOF
-        if (n != sizeof(type_le))
+        // The leading 4 bytes are enough for mps_peek to identify the packet
+        // and its byte order.
+        std::size_t n = std::fread(buf, 1, 4, fp);
+        if (n == 0) break;                                  // EOF
+        if (n != 4) { std::fprintf(stderr, "short read (type)\n"); break; }
+
+        // Peek once; type and byte order are constant for the rest of the file.
+        if (stream.info == nullptr &&
+            mps_peek(buf, 4, &stream.info, &stream.order,
+                     &stream.byte_swap_needed) != MPS_PARSE_OK)
         {
-            std::fprintf(stderr, "Short read for type field\n");
+            std::fprintf(stderr, "unrecognized packet / byte order\n");
             break;
         }
 
-        std::uint8_t type_id = static_cast<std::uint8_t>(type_le & 0xFFu);
-
-        const MpsBinaryPacketInfo* info = mps_get_binary_packet_info_by_type(type_id);
-        if (!info)
+        // Read the remainder of the frame.
+        std::size_t remaining = stream.info->size_bytes - 4;
+        if (std::fread(buf + 4, 1, remaining, fp) != remaining)
         {
-            std::fprintf(stderr, "Unknown packet type 0x%02X\n", type_id);
+            std::fprintf(stderr, "short read (body)\n");
             break;
         }
 
-        if (info->size_bytes > MPS_MAX_BINARY_PACKET_SIZE)
-        {
-            std::fprintf(stderr, "Packet size %u exceeds buffer\n", info->size_bytes);
-            break;
-        }
-
-        // Copy type field into the buffer, then read the remainder
-        std::memcpy(buf, &type_le, sizeof(type_le));
-
-        std::size_t remaining = info->size_bytes - sizeof(type_le);
-        if (remaining > 0)
-        {
-            n = std::fread(buf + sizeof(type_le), 1, remaining, fp);
-            if (n != remaining)
-            {
-                std::fprintf(stderr, "Short read for packet body\n");
-                break;
-            }
-        }
-
-        // Now interpret buf[0..size_bytes-1] as the appropriate packet struct
-        switch (info->type)
+        // Copy into an aligned, host-order struct (no-op swap on an LE host).
+        switch (stream.info->type)
         {
         case MPS_PKT_LEGACY_TYPE:
         {
-            const MpsLegacyPacket* pkt = reinterpret_cast<const MpsLegacyPacket*>(buf);
+            MpsLegacyPacket pkt;
+            mps_copy_packet(reinterpret_cast<std::uint8_t*>(&pkt), buf,
+                            stream.info->size_bytes, stream.byte_swap_needed);
 
-            std::uint32_t frame        = pkt->frame;          // already little-endian
-            std::uint32_t frame_time_s = pkt->frame_time_s;
-            std::uint32_t unit_index   = pkt->unit_index;
-
-            std::printf("Legacy frame %u, time %u, units index %u\n",
-                        frame, frame_time_s, unit_index);
-
-            if (unit_index == MPS_UNITS_RAW)
-            {
-                // RAW: 64 int32 counts in pkt->counts[]
-                for (std::size_t i = 0; i < 4; ++i)
-                    std::printf("  P[%zu] = %d (counts)\n", i, pkt->counts[i]);
-            }
+            std::printf("legacy frame %u  units=%d\n", pkt.frame, pkt.unit_index);
+            if (pkt.unit_index == MPS_UNITS_RAW)
+                std::printf("  P[0] = %d (counts)\n", pkt.counts[0]);
             else
-            {
-                // EU: 64 floats in pkt->pressure[]
-                for (std::size_t i = 0; i < 4; ++i)
-                    std::printf("  P[%zu] = %f\n", i, pkt->pressure[i]);
-            }
-
-            for (std::size_t i = 0; i < 2; ++i)
-                std::printf("  T[%zu] = %f\n", i, pkt->temperature[i]);
+                std::printf("  P[0] = %f\n", pkt.pressure[0]);
+            std::printf("  T[0] = %f\n", pkt.temperature[0]);
             break;
         }
 
-        case MPS_PKT_16_TYPE:
+        case MPS_PKT_64_TYPE:
         {
-            const Mps16Packet* pkt = reinterpret_cast<const Mps16Packet*>(buf);
-            std::printf("16 EU frame %u\n", pkt->frame);
-
-            for (std::size_t i = 0; i < 2; ++i)
-                std::printf("  T[%zu] = %f\n", i, pkt->temperature[i]);
-            for (std::size_t i = 0; i < 4; ++i)
-                std::printf("  P[%zu] = %f\n", i, pkt->pressure[i]);
+            Mps64Packet pkt;
+            mps_copy_packet(reinterpret_cast<std::uint8_t*>(&pkt), buf,
+                            stream.info->size_bytes, stream.byte_swap_needed);
+            std::printf("64 EU frame %u  P[0]=%f  T[0]=%f\n",
+                        pkt.frame, pkt.pressure[0], pkt.temperature[0]);
             break;
         }
 
-        case MPS_PKT_16_RAW_TYPE:
-        {
-            const Mps16RawPacket* pkt = reinterpret_cast<const Mps16RawPacket*>(buf);
-            std::printf("16 RAW frame %u\n", pkt->frame);
-
-            for (std::size_t i = 0; i < 2; ++i)
-                std::printf("  T[%zu] = %f\n", i, pkt->temperature[i]);
-            for (std::size_t i = 0; i < 4; ++i)
-                std::printf("  P[%zu] = %d (counts)\n", i, pkt->counts[i]);
-            break;
-        }
-
-        // Add analogous cases for 32/64 EU and RAW types as needed.
+        // ... 16/32 EU and RAW cases follow the same pattern ...
 
         default:
-            std::printf("Unhandled type 0x%02X (size %u)\n",
-                        info->type, info->size_bytes);
+            std::printf("unhandled type 0x%02X (size %u)\n",
+                        stream.info->type, stream.info->size_bytes);
             break;
         }
-
-        std::printf("----\n");
     }
 
     std::fclose(fp);
     return 0;
 }
-
 ```
 
 ## DATA FORMATS
