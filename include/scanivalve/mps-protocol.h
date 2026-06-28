@@ -11,9 +11,8 @@
 *
 *   All multibyte fields are defined according to the device manual; on the
 *   wire they may be transmitted in big-endian (network) byte order. This
-*   header only defines the logical layout. Callers are responsible for
-*   performing host<->network byte order conversions as needed when
-*   serializing/deserializing.
+*   header provides helpers for identifying the byte order and swapping if
+*   needed.
 *
 *   Author:         C. Sooriyakumaran
 *
@@ -53,9 +52,21 @@ extern "C"
 #define MPS_MAX_SIGNED_ADC_COUNTS ((1 << (MPS_ADC_BITS -1)) - 1)
 #define MPS_MIN_SIGNED_ADC_COUNTS (-(1 << (MPS_ADC_BITS -1)))
 
+#if defined(__cplusplus)
+    #define MPS_STATIC_ASSERT(cond, msg) static_assert(cond, msg)
+#else
+    #define MPS_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg) /* C11 */
+#endif // __cplusplus
+
+#if defined(__cplusplus)
+    #define MPS_ALIGNOF(T) alignof(T)
+#else
+    #define MPS_ALIGNOF(T) _Alignof(T) /* C11 */
+#endif // __cplusplus
+
 /*
 *
-*  mps_stricpmp
+*  mps_stricmp
 *
 *   Case-insensitive, cross-platform string compare.
 *
@@ -72,6 +83,7 @@ static inline int mps_stricmp(const char* a, const char* b)
 #if defined(_WIN32) || defined(_WIN64)
     return _stricmp(a, b);   /* Windows */
 #else
+    #include <strings.h>
     return strcasecmp(a, b); /* POSIX */
 #endif
 }
@@ -83,7 +95,6 @@ typedef enum MpsDeviceID
     MPS_4232 = 4232,
     MPS_4264 = 4264
 } MpsDeviceID;
-
 
 /*
 *
@@ -272,7 +283,6 @@ static inline int mps_units_from_string(const char* s, MpsUnits* out)
     return 0;
 }
 
-
 /*
 *
 *  Data format (`SET FORMAT` command)
@@ -290,7 +300,6 @@ typedef enum MpsDataFormat
     MPS_FMT_LABVIEW,            /* L */
     MPS_FMT_COUNT
 } MpsDataFormat;
-
 
 /*
 *
@@ -488,6 +497,15 @@ typedef enum MpsBinaryPacketType
     MPS_PKT_LEGACY_TYPE = 0x0A,
 } MpsBinaryPacketType;
 
+#define MPS_TYPE_FITS_U8(x) ((x) >= 0 && (x) <= 0xFF)
+MPS_STATIC_ASSERT(
+    MPS_TYPE_FITS_U8(MPS_PKT_16_TYPE) && MPS_TYPE_FITS_U8(MPS_PKT_16_RAW_TYPE) &&
+    MPS_TYPE_FITS_U8(MPS_PKT_32_TYPE) && MPS_TYPE_FITS_U8(MPS_PKT_32_RAW_TYPE) &&
+    MPS_TYPE_FITS_U8(MPS_PKT_64_TYPE) && MPS_TYPE_FITS_U8(MPS_PKT_64_RAW_TYPE) &&
+    MPS_TYPE_FITS_U8(MPS_PKT_LEGACY_TYPE),
+    "MPS packet type must fit one byte; byte-order auto-detect depends on it"
+);
+
 /* Binary Packet Size: defined in Section 7 of the Manual*/
 typedef enum MpsBinaryPacketSize
 {
@@ -673,19 +691,26 @@ typedef struct Mps64LabviewPacket
     float pressure[64]; /* 64 channels of pressure data */
 } Mps64LabviewPacket;
 
-#ifdef __cplusplus
-static_assert(sizeof(Mps16Packet)        == MPS_PKT_16_SIZE,         "Mps16Packet must be 96 bytes");
-static_assert(sizeof(Mps32Packet)        == MPS_PKT_32_SIZE,         "Mps32Packet must be 160 bytes");
-static_assert(sizeof(Mps64Packet)        == MPS_PKT_64_SIZE,         "Mps64Packet must be 340 bytes");
-static_assert(sizeof(Mps16RawPacket)     == MPS_PKT_16_SIZE,         "Mps16RawPacket must be 96 bytes");
-static_assert(sizeof(Mps32RawPacket)     == MPS_PKT_32_SIZE,         "Mps32RawPacket must be 160 bytes");
-static_assert(sizeof(Mps64RawPacket)     == MPS_PKT_64_SIZE,         "Mps64RawPacket must be 340 bytes");
-static_assert(sizeof(MpsLegacyPacket)    == MPS_PKT_LEGACY_SIZE,     "MpsBinaryPacket must be 348 bytes");
-static_assert(sizeof(Mps16LabviewPacket) == MPS_PKT_16_LABVIEW_SIZE, "MpsLabviewFrame must be 72 bytes");
-static_assert(sizeof(Mps32LabviewPacket) == MPS_PKT_32_LABVIEW_SIZE, "MpsLabviewFrame must be 136 bytes");
-static_assert(sizeof(Mps64LabviewPacket) == MPS_PKT_64_LABVIEW_SIZE, "MpsLabviewFrame must be 264 bytes");
-#endif
-
+MPS_STATIC_ASSERT(sizeof(Mps16Packet)             == MPS_PKT_16_SIZE,                          "Mps16Packet     must be 96 bytes");
+MPS_STATIC_ASSERT(sizeof(Mps32Packet)             == MPS_PKT_32_SIZE,                          "Mps32Packet     must be 160 bytes");
+MPS_STATIC_ASSERT(sizeof(Mps64Packet)             == MPS_PKT_64_SIZE,                          "Mps64Packet     must be 304 bytes");
+MPS_STATIC_ASSERT(sizeof(Mps16RawPacket)          == MPS_PKT_16_SIZE,                          "Mps16RawPacket  must be 96 bytes");
+MPS_STATIC_ASSERT(sizeof(Mps32RawPacket)          == MPS_PKT_32_SIZE,                          "Mps32RawPacket  must be 160 bytes");
+MPS_STATIC_ASSERT(sizeof(Mps64RawPacket)          == MPS_PKT_64_SIZE,                          "Mps64RawPacket  must be 304 bytes");
+MPS_STATIC_ASSERT(sizeof(MpsLegacyPacket)         == MPS_PKT_LEGACY_SIZE,                      "MpsBinaryPacket must be 348 bytes");
+MPS_STATIC_ASSERT(sizeof(Mps16LabviewPacket)      == MPS_PKT_16_LABVIEW_SIZE,                  "MpsLabviewFrame must be 72 bytes");
+MPS_STATIC_ASSERT(sizeof(Mps32LabviewPacket)      == MPS_PKT_32_LABVIEW_SIZE,                  "MpsLabviewFrame must be 136 bytes");
+MPS_STATIC_ASSERT(sizeof(Mps64LabviewPacket)      == MPS_PKT_64_LABVIEW_SIZE,                  "MpsLabviewFrame must be 264 bytes");
+MPS_STATIC_ASSERT(MPS_ALIGNOF(Mps16Packet)        == 4 && sizeof(Mps16Packet)        % 4 == 0, "Mps16Packet     must be 4-byte aligned");
+MPS_STATIC_ASSERT(MPS_ALIGNOF(Mps32Packet)        == 4 && sizeof(Mps32Packet)        % 4 == 0, "Mps32Packet     must be 4-byte aligned");
+MPS_STATIC_ASSERT(MPS_ALIGNOF(Mps64Packet)        == 4 && sizeof(Mps64Packet)        % 4 == 0, "Mps64Packet     must be 4-byte aligned");
+MPS_STATIC_ASSERT(MPS_ALIGNOF(Mps16RawPacket)     == 4 && sizeof(Mps16RawPacket)     % 4 == 0, "Mps16RawPacket  must be 4-byte aligned");
+MPS_STATIC_ASSERT(MPS_ALIGNOF(Mps32RawPacket)     == 4 && sizeof(Mps32RawPacket)     % 4 == 0, "Mps32RawPacket  must be 4-byte aligned");
+MPS_STATIC_ASSERT(MPS_ALIGNOF(Mps64RawPacket)     == 4 && sizeof(Mps64RawPacket)     % 4 == 0, "Mps64RawPacket  must be 4-byte aligned");
+MPS_STATIC_ASSERT(MPS_ALIGNOF(MpsLegacyPacket)    == 4 && sizeof(MpsLegacyPacket)    % 4 == 0, "MpsBinaryPacket must be 4-byte aligned");
+MPS_STATIC_ASSERT(MPS_ALIGNOF(Mps16LabviewPacket) == 4 && sizeof(Mps16LabviewPacket) % 4 == 0, "MpsLabviewFrame must be 4-byte aligned");
+MPS_STATIC_ASSERT(MPS_ALIGNOF(Mps32LabviewPacket) == 4 && sizeof(Mps32LabviewPacket) % 4 == 0, "MpsLabviewFrame must be 4-byte aligned");
+MPS_STATIC_ASSERT(MPS_ALIGNOF(Mps64LabviewPacket) == 4 && sizeof(Mps64LabviewPacket) % 4 == 0, "MpsLabviewFrame must be 4-byte aligned");
 
 /*
 *  Contains type, pressure/temperature channel count, and
@@ -729,6 +754,92 @@ static inline const MpsBinaryPacketInfo* mps_get_binary_packet_info_by_type(uint
     return (const MpsBinaryPacketInfo*)0;
 }
 
+typedef enum MpsByteOrder
+{
+    MPS_BYTE_ORDER_UNKNOWN = 0,
+    MPS_BYTE_ORDER_LE,
+    MPS_BYTE_ORDER_BE
+} MpsByteOrder;
+
+typedef struct MpsStream
+{
+    const MpsBinaryPacketInfo* info;
+    MpsByteOrder order;
+    int byte_swap_needed;
+
+} MpsStream;
+
+typedef enum MpsParseStatus
+{
+    MPS_PARSE_OK = 0,
+    MPS_PARSE_ERR_NULL,         /* buf or out was NULL */
+    MPS_PARSE_ERR_SHORT,        /* len smaller than the packet needs */
+    MPS_PARSE_ERR_UNKNOWN_TYPE  /* type field not a recognized packet */
+} MpsParseStatus;
+
+static inline MpsByteOrder mps_host_byte_order(void)
+{
+    const uint16_t one = 1u;
+    return (*(const uint8_t*)&one == 1u) ? MPS_BYTE_ORDER_LE : MPS_BYTE_ORDER_BE;
+}
+
+/* since the type of packet is always encoded as 1 byte, we can therefore check which byte it is
+ * and consequently determine the byte ordering of the data */
+static inline MpsParseStatus mps_peek(const uint8_t* buf, size_t len,
+                                      const MpsBinaryPacketInfo** out_info,
+                                      MpsByteOrder* out_order,
+                                      int* byte_swap_needed)
+{
+    if (!buf || !out_info || !out_order || !byte_swap_needed) return MPS_PARSE_ERR_NULL;
+    if (len < 4) return MPS_PARSE_ERR_SHORT;
+
+    const MpsBinaryPacketInfo* le = (buf[1]==0 && buf[2]==0 && buf[3]==0) ? mps_get_binary_packet_info_by_type(buf[0]) : NULL;
+    const MpsBinaryPacketInfo* be = (buf[0]==0 && buf[1]==0 && buf[2]==0) ? mps_get_binary_packet_info_by_type(buf[3]) : NULL;
+
+    MpsByteOrder host = mps_host_byte_order();
+    if (le && !be) { *out_info = le; *out_order = MPS_BYTE_ORDER_LE; *byte_swap_needed = (host != *out_order); return MPS_PARSE_OK; }
+    if (be && !le) { *out_info = be; *out_order = MPS_BYTE_ORDER_BE; *byte_swap_needed = (host != *out_order); return MPS_PARSE_OK; }
+
+    /* all-zero (type 0), unknown, or ambiguous */
+    *out_info  = NULL;
+    *out_order = MPS_BYTE_ORDER_UNKNOWN;
+    *byte_swap_needed = 0;
+    return MPS_PARSE_ERR_UNKNOWN_TYPE;
+}
+
+/* Every MPS binary packet field is a 4-byte word, so byte-order conversion is a 
+ * uniform per-word reversal - no struct layout knowledge required. Call only when 
+ * the packet's order differs from the host. Mutates buf; idempotent only in pairs
+ * (running twice restores the original order) */
+static inline void mps_byte_swap_inplace(uint8_t* buf, size_t size_bytes)
+{
+    if(!buf) return;
+    for (size_t i = 0; i + 4 <= size_bytes; i += 4)
+    {
+        uint8_t a = buf[i+0], b = buf[i+1];
+        buf[i+0] = buf[i+3];
+        buf[i+1] = buf[i+2];
+        buf[i+2] = b;
+        buf[i+3] = a;
+    }
+}
+
+/* Read-only-safe counterpart to mps_byte_swap_inplace: copy a packet from src 
+ * into dst, ononverting to host order when byte_swap is set. src is untouch, so 
+ * this is the path for shared memory / mmap'd files. With byte_swap == 0 it is 
+ * a plain memcpy. If dst is a real (aligned) packet struct, the field reads
+ * afterward are well-defined - no cast over a raw byte buffer */
+static inline void mps_copy_packet(uint8_t* dst, const uint8_t* src, size_t size_bytes, int byte_swap)
+{
+    if (!byte_swap) { memcpy(dst, src, size_bytes); return; }
+    for (size_t i = 0; i + 4 <= size_bytes; i +=4)
+    {
+        dst[i+0] = src[i+3];
+        dst[i+1] = src[i+2];
+        dst[i+2] = src[i+1];
+        dst[i+3] = src[i+0];
+    }
+}
 
 #ifdef __cplusplus
 } // extern "C"
