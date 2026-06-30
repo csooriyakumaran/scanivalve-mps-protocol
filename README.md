@@ -164,6 +164,52 @@ int main(int argc, char** argv)
 }
 ```
 
+### zero-copy in-place variant
+
+When you own the buffer and may mutate it (e.g. a socket receive buffer), you
+can skip the copy-out: swap the landing buffer in place once, then read fields
+straight off the matching `MpsPacket` union member. This trades a copy for a
+caveat — see the note below.
+
+```c++
+// ... mps_peek and the two freads are identical to the example above ...
+
+// Convert to host order in place, exactly once per frame (no-op on an LE
+// host). After this the union members hold host-order values.
+if (stream.byte_swap_needed)
+    mps_byte_swap_inplace(buf.bytes, stream.info->size_bytes);
+
+switch (stream.info->type)
+{
+case MPS_PKT_LEGACY_TYPE:
+    std::printf("legacy frame %u  units=%d\n",
+                buf.legacy64.frame, buf.legacy64.unit_index);
+    if (buf.legacy64.unit_index == MPS_UNITS_RAW)
+        std::printf("  P[0] = %d (counts)\n", buf.legacy64.counts[0]);
+    else
+        std::printf("  P[0] = %f\n", buf.legacy64.pressure[0]);
+    std::printf("  T[0] = %f\n", buf.legacy64.temperature[0]);
+    break;
+
+case MPS_PKT_64_TYPE:
+    std::printf("64 EU frame %u  P[0]=%f  T[0]=%f\n",
+                buf.eu64.frame, buf.eu64.pressure[0], buf.eu64.temperature[0]);
+    break;
+
+// ... 16/32 EU and RAW cases read buf.eu16 / buf.eu32 / buf.raw* ...
+}
+```
+
+**Caveat.** Reading a union member other than the one last written is well
+defined in C, but in C++ it is technically undefined behavior (only the
+most-recently-written member is "active"). Every mainstream compiler supports
+it, but if you need a standards-clean zero-copy read on C++23, use
+`std::start_lifetime_as<Mps64Packet>(buf.bytes)` to begin the object's lifetime
+in place; on older standards, prefer the `mps_copy_packet` example above, whose
+field reads are unambiguously well defined. This path also requires a buffer you
+own and may mutate — use `mps_copy_packet` for read-only sources such as
+memory-mapped files.
+
 ## DATA FORMATS
 
 ### TCP BINARY SERVER DATA FORMATTING MATRIX
@@ -189,6 +235,7 @@ int main(int argc, char** argv)
 (*) ZERO PADDED FOR MPS-4216 & MPS-4232
 
 ### UDP BINARY DATA FORMATTING MATRIX
+
 | DEVICE ID | DATA DESTINATION | ENUDP | ENFTP | UNITS | SET FORMAT | SIM        | PACKET TYPE | PACKET SIZE |
 |-----------|------------------|-------|-------|-------|------------|------------|-------------|-------------|
 | 4216      | UDP              | 1     | 0     |  EU   | F B        |  0         | 0x5D        | 96          |
@@ -203,6 +250,7 @@ int main(int argc, char** argv)
 (*) ZERO PADDED FOR MPS-4216 & MPS-4232
 
 ### FTP BINARY DATA FORMATTING MATRIX
+
 | DEVICE ID | DATA DESTINATION | ENUDP | ENFTP | UNITS | SET FORMAT | SIM        | PACKET TYPE | PACKET SIZE |
 |-----------|------------------|-------|-------|-------|------------|------------|-------------|-------------|
 | 4216      | FTP              | 0     | 1     |  EU   | F B        |  0         | 0x5D        | 96          |
