@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Note: the library version is tracked separately from the MPS firmware version
 that the protocol targets (currently firmware v4.01).
 
+## [0.1.6] - 2026-06-30
+
+### Added
+- `MpsPacket` tagged union overlaying a `MPS_MAX_BINARY_PACKET_SIZE` byte
+  buffer with every packet variant (legacy / EU / RAW / LabVIEW), giving an
+  aligned, aliasing-safe landing buffer for inbound frames. Backed by
+  compile-time asserts that the union is at least 348 bytes and 4-byte aligned.
+
 ## [0.1.5] - 2026-06-28
 
 ### Added

@@ -94,20 +94,20 @@ int main(int argc, char** argv)
     FILE* fp = std::fopen(argv[1], "rb");
     if (!fp) { std::perror("fopen"); return 1; }
 
-    std::uint8_t buf[MPS_MAX_BINARY_PACKET_SIZE];
-    MpsStream    stream{};   // populated on the first packet, reused thereafter
+    MpsPacket buf{};          // aligned landing buffer; read raw bytes via buf.bytes
+    MpsStream stream{};       // populated on the first packet, reused thereafter
 
     for (;;)
     {
         // The leading 4 bytes are enough for mps_peek to identify the packet
         // and its byte order.
-        std::size_t n = std::fread(buf, 1, 4, fp);
+        std::size_t n = std::fread(buf.bytes, 1, 4, fp);
         if (n == 0) break;                                  // EOF
         if (n != 4) { std::fprintf(stderr, "short read (type)\n"); break; }
 
         // Peek once; type and byte order are constant for the rest of the file.
         if (stream.info == nullptr &&
-            mps_peek(buf, 4, &stream.info, &stream.order,
+            mps_peek(buf.bytes, 4, &stream.info, &stream.order,
                      &stream.byte_swap_needed) != MPS_PARSE_OK)
         {
             std::fprintf(stderr, "unrecognized packet / byte order\n");
@@ -116,7 +116,7 @@ int main(int argc, char** argv)
 
         // Read the remainder of the frame.
         std::size_t remaining = stream.info->size_bytes - 4;
-        if (std::fread(buf + 4, 1, remaining, fp) != remaining)
+        if (std::fread(buf.bytes + 4, 1, remaining, fp) != remaining)
         {
             std::fprintf(stderr, "short read (body)\n");
             break;
@@ -128,7 +128,7 @@ int main(int argc, char** argv)
         case MPS_PKT_LEGACY_TYPE:
         {
             MpsLegacyPacket pkt;
-            mps_copy_packet(reinterpret_cast<std::uint8_t*>(&pkt), buf,
+            mps_copy_packet(reinterpret_cast<std::uint8_t*>(&pkt), buf.bytes,
                             stream.info->size_bytes, stream.byte_swap_needed);
 
             std::printf("legacy frame %u  units=%d\n", pkt.frame, pkt.unit_index);
@@ -143,7 +143,7 @@ int main(int argc, char** argv)
         case MPS_PKT_64_TYPE:
         {
             Mps64Packet pkt;
-            mps_copy_packet(reinterpret_cast<std::uint8_t*>(&pkt), buf,
+            mps_copy_packet(reinterpret_cast<std::uint8_t*>(&pkt), buf.bytes,
                             stream.info->size_bytes, stream.byte_swap_needed);
             std::printf("64 EU frame %u  P[0]=%f  T[0]=%f\n",
                         pkt.frame, pkt.pressure[0], pkt.temperature[0]);

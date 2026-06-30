@@ -691,6 +691,22 @@ typedef struct Mps64LabviewPacket
     float pressure[64]; /* 64 channels of pressure data */
 } Mps64LabviewPacket;
 
+typedef union MpsPacket
+{
+    uint8_t bytes[MPS_MAX_BINARY_PACKET_SIZE];
+    MpsLegacyPacket    legacy64;
+    Mps64Packet        eu64;
+    Mps32Packet        eu32;
+    Mps16Packet        eu16;
+    Mps64RawPacket     raw64;
+    Mps32RawPacket     raw32;
+    Mps16RawPacket     raw16;
+    Mps64LabviewPacket lab64;
+    Mps32LabviewPacket lab32;
+    Mps16LabviewPacket lab16;
+} MpsPacket;
+
+MPS_STATIC_ASSERT(sizeof(MpsPacket)               >= MPS_MAX_BINARY_PACKET_SIZE,               "MpsPacket union must >= 348 bytes");
 MPS_STATIC_ASSERT(sizeof(Mps16Packet)             == MPS_PKT_16_SIZE,                          "Mps16Packet     must be 96 bytes");
 MPS_STATIC_ASSERT(sizeof(Mps32Packet)             == MPS_PKT_32_SIZE,                          "Mps32Packet     must be 160 bytes");
 MPS_STATIC_ASSERT(sizeof(Mps64Packet)             == MPS_PKT_64_SIZE,                          "Mps64Packet     must be 304 bytes");
@@ -701,6 +717,7 @@ MPS_STATIC_ASSERT(sizeof(MpsLegacyPacket)         == MPS_PKT_LEGACY_SIZE,       
 MPS_STATIC_ASSERT(sizeof(Mps16LabviewPacket)      == MPS_PKT_16_LABVIEW_SIZE,                  "MpsLabviewFrame must be 72 bytes");
 MPS_STATIC_ASSERT(sizeof(Mps32LabviewPacket)      == MPS_PKT_32_LABVIEW_SIZE,                  "MpsLabviewFrame must be 136 bytes");
 MPS_STATIC_ASSERT(sizeof(Mps64LabviewPacket)      == MPS_PKT_64_LABVIEW_SIZE,                  "MpsLabviewFrame must be 264 bytes");
+MPS_STATIC_ASSERT(MPS_ALIGNOF(MpsPacket)          == 4 && sizeof(MpsPacket)          % 4 == 0, "MpsPacket union must be 4-byte aligned");
 MPS_STATIC_ASSERT(MPS_ALIGNOF(Mps16Packet)        == 4 && sizeof(Mps16Packet)        % 4 == 0, "Mps16Packet     must be 4-byte aligned");
 MPS_STATIC_ASSERT(MPS_ALIGNOF(Mps32Packet)        == 4 && sizeof(Mps32Packet)        % 4 == 0, "Mps32Packet     must be 4-byte aligned");
 MPS_STATIC_ASSERT(MPS_ALIGNOF(Mps64Packet)        == 4 && sizeof(Mps64Packet)        % 4 == 0, "Mps64Packet     must be 4-byte aligned");
